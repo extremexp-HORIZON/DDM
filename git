@@ -6,7 +6,7 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
-*.sqlite3
+
 
 # Environment files
 .env

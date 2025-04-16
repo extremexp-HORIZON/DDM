@@ -5,7 +5,7 @@ from great_expectations.core.expectation_suite import ExpectationSuite
 
 import logging
 from great_expectations.core import ExpectationSuite
-from great_expectations.core.expectation_suite import ExpectationConfiguration
+from great_expectations.expectations.expectation_configuration import ExpectationConfiguration
 
 logger = logging.getLogger(__name__)
 

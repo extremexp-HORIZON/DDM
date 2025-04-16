@@ -133,7 +133,6 @@ const SetExpectations = () => {
       fileFormats=".csv,.json,.xlsx"
       isDarkMode={isDarkMode}
     />,
-    expectations.length > 0 ? (
       <StepDefineExpectations
         expectations={expectations}
         tableExpectations={tableExpectations}
@@ -145,13 +144,11 @@ const SetExpectations = () => {
         updateTableExpectation={updateTableExpectation}
         setSelectedExpectations={setSelectedExpectations}
         setSelectedTypeFilter={setSelectedTypeFilter}
-        setTableExpectatons={setTableExpectations}
+        setTableExpectations={setTableExpectations}
         handleArgChange={handleArgChange}
         handleTableArgChange={handleTableArgChange}
-      />
-    ) : (
-      <div />
-    ), // ✅ fallback when expectations is empty
+      />,
+      // ✅ fallback when expectations is empty
     <StepFinalize saveExpectations={saveExpectations} /> // ✅ this now gets evaluated properly
   ];
   

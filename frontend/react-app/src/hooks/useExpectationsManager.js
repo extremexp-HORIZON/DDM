@@ -11,9 +11,29 @@ export const useExpectationsManager = ({ toast, showMessage }) => {
 
   const handleExpectations = async (taskId) => {
     const result = await pollTaskResult(taskId, 1000, 120000);
-    const tableRules = result.categorized?.table || {};
-    const tableValues = Object.values(result.table_expectations || {}).flat();
+    console.log("📦 Raw result from pollTaskResult:", result);
 
+    const tableRules = result.categorized?.table || {};
+    const tableValues = result.table_expectations || {};
+
+    console.log("🧱 Original tableRules:", tableRules);
+    console.log("🗂 table_expectations (raw):", tableValues);
+
+    // Merge arguments into categorized.table from table_expectations
+    for (const [category, rules] of Object.entries(tableRules)) {
+      const enrichedRules = rules.map(rule => {
+        const matching = (tableValues?.[category] || []).find(r => r.name === rule.name);
+        return {
+          ...rule,
+          arguments: matching?.arguments?.length ? matching.arguments : rule.arguments || []
+        };
+      });
+      tableRules[category] = enrichedRules;
+    }
+
+    console.log("✅ Merged tableRules with arguments:", tableRules);
+
+    // Build initial column-level expectations
     const initialExpectations = {};
     result.expectations?.forEach(exp => {
       const col = exp.column;
@@ -26,23 +46,31 @@ export const useExpectationsManager = ({ toast, showMessage }) => {
       });
     });
 
+    console.log("📌 Parsed initial column-level expectations:", initialExpectations);
+
+    // Build initial table-level expectations
     const initialTableExpectations = {};
-    for (const [, rules] of Object.entries(tableRules)) {
+    for (const [category, rules] of Object.entries(tableRules)) {
       for (const rule of rules) {
-        const defaults = (rule.arguments || []).reduce((acc, a) => {
-          acc[a.name] = a.expected_value ?? "";
+        const matchedRule = (tableValues[category] || []).find(tv => tv.name === rule.name);
+        const matchedArgs = matchedRule?.args || {};
+        const hasValues = Object.values(matchedArgs).some(v => v !== null && v !== "");
+
+        const defaults = (rule.arguments || []).reduce((acc, arg) => {
+          acc[arg.name] = matchedArgs[arg.name] ?? arg.expected_value ?? "";
           return acc;
         }, {});
-        const matched = tableValues.find(tv => tv.name === rule.name)?.args || {};
-        const hasValues = Object.values(matched).some(v => v !== null && v !== "");
+
         initialTableExpectations[rule.name] = {
           ...defaults,
-          ...matched,
           _enabled: hasValues,
         };
       }
     }
 
+    console.log("✅ Final initialTableExpectations:", initialTableExpectations);
+
+    // Update state
     setExpectationRules({ ...result.categorized, table: tableRules });
     setExpectations(result.expectations || []);
     setSelectedExpectations(initialExpectations);
