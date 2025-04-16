@@ -1,0 +1,6 @@
+{
+"mode": "client",
+    "connect": {
+      "endpoints": ["tcp/zenoh1:7447"]
+    }
+  }

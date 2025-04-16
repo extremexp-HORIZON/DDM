@@ -1,0 +1,151 @@
+version: "3.9"
+
+services:
+  ollama:
+    image: ollama/ollama  
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: always
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      OLLAMA_NUM_PARALLEL: 4
+      OLLAMA_MAX_LOADED_MODELS: 1
+      OLLAMA_KEEP_ALIVE: 24h
+      OLLAMA_MMAP: true         
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - app_network
+
+  # Frontend service (React app)
+  frontend:
+    build:
+      context: ./frontend/react-app
+    ports:
+      - "3001:3001"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+  # Backend service (Flask app)
+  backend:
+    build:
+      context: ./backend/flask-app
+    env_file: ./backend/flask-app/.env  # Load .env file
+    environment:
+      - PYTHONPATH=/app
+      - ZENOH_CONFIG_PATH=/app/zenoh-client.json5  
+      - OLLAMA_HOST=http://ollama:11434
+      
+    ports:
+      - "5001:5001"
+    depends_on:
+      db:
+        condition: service_started
+      zenoh1:
+        condition: service_started
+      zenoh4:
+        condition: service_started
+      ollama:
+        condition: service_started
+    networks:
+      - app_network
+    volumes:
+      - ./backend/flask-app/uploads:/app/uploads  # Mount uploads directory
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Optional: for host access
+
+
+  # Celery Worker service
+  celery:
+    build:
+      context: ./backend/flask-app
+      dockerfile: Dockerfile.celery
+    env_file: ./backend/flask-app/.env  # Load environment variables
+    depends_on:
+      - backend
+      - db
+    volumes:
+      - ./backend/flask-app/uploads:/app/uploads  # Mount uploads directory for Celery
+    networks:
+      app_network:
+        ipv4_address: 192.168.10.10
+    command: ["celery", "-A", "make_celery", "worker", "--concurrency=4", "--loglevel=info", "-P", "eventlet"]
+
+
+  # PostgreSQL Database service
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      app_network:
+        ipv4_address: 192.168.10.11
+
+  # Zenoh FS Node 1
+  
+  zenoh1:
+    image: eclipse/zenoh:0.11.0
+    container_name: zenoh1
+    command: -c /root/.zenoh/zenoh-fs.json5 --adminspace-permissions rw
+    restart: unless-stopped
+    ports:
+      - 17447:7447
+      - 18000:8000
+    volumes:
+      - ./zenoh1:/root/.zenoh
+    environment:
+      - RUST_LOG=debug
+      - ZENOH_BACKEND_FS_ROOT=/root/.zenoh/fs
+      - RUST_BACKTRACE=full
+    networks:
+      app_network:
+        ipv4_address: 192.168.10.12
+
+  zenoh4:
+    image: eclipse/zenoh:0.11.0
+    container_name: zenoh4
+    command: -c /root/.zenoh/zenoh-fs.json5 --adminspace-permissions rw
+    restart: unless-stopped
+    ports:
+      - 47447:7447  # Adjust port mapping as needed
+      - 48000:8000  # Adjust port mapping as needed
+    volumes:
+      - ./zenoh4:/root/.zenoh  # Adjust volume mapping as needed
+    environment:
+      - RUST_LOG=debug
+      - ZENOH_BACKEND_FS_ROOT=/root/.zenoh/fs  # Use a different directory for storage
+    networks:
+      app_network:
+        ipv4_address: 192.168.10.15  # Use a uni` IP address within the network
+
+
+networks:
+  app_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.10.0/24
+          gateway: 192.168.10.1
+
+
+
+
+volumes:
+  postgres_data:
+  ollama_data:

@@ -1,0 +1,11 @@
+FROM ollama/ollama:latest
+
+# Optional: install curl just in case it's missing
+RUN apt-get update && apt-get install -y curl bash
+
+# Add entrypoint
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use bash entrypoint that starts Ollama & preloads the model
+ENTRYPOINT ["/entrypoint.sh"]

@@ -1,0 +1,33 @@
+{
+  mode: 'peer',
+  queries_default_timeout: 20000,
+  connect: {
+    endpoints: ["tcp/192.168.10.12:7447"]
+  },
+  scouting: {
+    multicast: {
+      autoconnect: { router: "", peer: "router|peer" },
+    },
+    gossip: {
+      autoconnect: { router: "", peer: "router|peer" },
+    },
+  },
+  plugins: {
+    storage_manager: {
+      volumes: {
+        fs: {}
+      },
+      storages: {
+        fs_use_cases_replica: {
+          key_expr: "projects/**",
+          strip_prefix: "projects",
+          volume: {
+            id: "fs",
+            dir: "projects_replica"
+          }
+        }
+      }
+    },
+    rest: { http_port: 8000 }
+  }
+}

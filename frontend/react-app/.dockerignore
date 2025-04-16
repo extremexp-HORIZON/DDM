@@ -1,0 +1,26 @@
+# Ignore Python bytecode
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Ignore the virtual environment (if any)
+env/
+.
+
+# Ignore development-specific directories
+node_modules/
+dist/
+build/
+.dockerignore
+.DS_Store
+*.log
+
+# Ignore any temporary or unnecessary files
+*.bak
+*.swp
+.idea/
+.vscode/
+
+# Ignore Dockerfile or build scripts (if not required)
+Dockerfile.*

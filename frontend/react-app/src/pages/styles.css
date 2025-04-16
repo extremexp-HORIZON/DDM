@@ -1,0 +1,112 @@
+@import "react-querybuilder/dist/query-builder.css";
+
+.set-policies-container {
+  padding: 20px;
+  background: var(--rqb-background-color);
+}
+
+
+  
+.queryBuilder {
+    min-width: 420px;
+  }
+
+
+  /* SVG color adapts to theme */
+  .svg-font-color svg > path {
+    fill: var(--ifm-font-color-base);
+  }
+  
+  /* Prevent overflow issues */
+  .donut-hole {
+    overflow-y: unset !important;
+  }
+  
+  /* 🚀 Validation Styles (Light & Dark Mode) */
+  .validateQuery .queryBuilder {
+    /* Invalid Groups */
+    & .ruleGroup.queryBuilder-invalid {
+      background-color: #66339966; /* translucent rebeccapurple */
+  
+      & .ruleGroup-addRule {
+        font-weight: bold !important;
+      }
+  
+      & > .ruleGroup-header::after {
+        content: "Empty groups are considered invalid. Avoid them by using addRuleToNewGroups.";
+        color: white;
+      }
+    }
+  
+    /* Invalid Rule Fields */
+    & .rule.queryBuilder-invalid .rule-value {
+      background-color: #66339966; /* translucent rebeccapurple */
+  
+      &::placeholder {
+        color: #47246b; /* rebeccapurple but 30% darker */
+      }
+    }
+  }
+  
+  /* 🚀 Dark Theme Adjustments */
+  html[data-theme="dark"] .validateQuery .queryBuilder .rule.queryBuilder-invalid .rule-value::placeholder {
+    color: #945ec9; /* rebeccapurple but 30% lighter */
+  }
+  
+  /* 🚀 Justified Layout (Align buttons to the right) */
+  .justifiedLayout {
+    & .queryBuilder {
+      & .ruleGroup-addGroup {
+        & + button.ruleGroup-cloneGroup,
+        & + button.ruleGroup-lock,
+        & + button.ruleGroup-remove {
+          margin-left: auto !important;
+        }
+      }
+  
+      & .rule-operators,
+      & .rule-value,
+      & .control,
+      & .chakra-select__wrapper,
+      & .mantine-InputWrapper-root + input[type="hidden"] {
+        & + button.rule-cloneRule,
+        & + button.rule-lock,
+        & + button.rule-remove {
+          margin-left: auto !important;
+        }
+      }
+    }
+  }
+  
+  /* 🚀 Dark Theme Styles */
+  .dark-theme {
+    background-color: #1e1e1e;
+    color: white;
+  }
+  
+  .dark-theme .queryBuilder-branches {
+    border-color: #bb86fc;
+    
+  }
+  
+  .dark-theme .ruleGroup {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .dark-theme .rule-value {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+  
+  .dark-theme .rule-operators {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .dark-theme .ruleGroup-invalid {
+    background-color: #47246b; /* Darker validation */
+  }
+  
+  .dark-theme .rule.queryBuilder-invalid .rule-value {
+    background-color: #66339999; /* Slightly stronger invalid color */
+  }
+  

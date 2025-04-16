@@ -1,0 +1,19 @@
+# Node modules & build
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.sqlite3
+
+# Environment files
+.env
+.env.*
+
+# IDE
+.vscode/
+
+# Docker volumes/logs (if any)
+*.log
