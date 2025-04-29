@@ -1,0 +1,3 @@
+frontend/react-app/src/pages/styles.css linguist-vendored
+frontend/react-app/public/themes/* linguist-vendored
+*.css linguist-vendored

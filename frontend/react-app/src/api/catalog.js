@@ -11,7 +11,7 @@ export const CATALOG_API = {
     return response.data;
   },
   fetchMyCatalog: async (params = {}) => {
-    const response = await axios.get(`${BASE_URL}/catalog/my-catalog/`, {
+    const response = await axios.get(`${BASE_URL}/catalog/my-catalog`, {
       params,
       headers: { "Content-Type": "application/json" },
     });

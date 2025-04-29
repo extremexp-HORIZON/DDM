@@ -3,6 +3,7 @@ import { FileUpload } from 'primereact/fileupload';
 import { ProgressSpinner } from 'primereact/progressspinner';
 import { Button } from 'primereact/button';
 import SupportedFileTypesDialog from '../SupportedFileTypesDialog'; // adjust the path
+import "../../styles/components/stepper.css"
 
 const StepUploadSampleFile = ({
   loadingExpectations,

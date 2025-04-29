@@ -4,6 +4,7 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { Dropdown } from 'primereact/dropdown';
 import { MultiSelect } from 'primereact/multiselect';
 import {fileTypeItemTemplate}  from '../../utils/icons'
+import "../../styles/components/stepper.css"
 
 const StepExpectationDetails = ({ 
     useCase, 
@@ -23,7 +24,7 @@ const StepExpectationDetails = ({
 }) =>  (
         <div className={isDarkMode ? 'dark-mode' : ''} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <h3>Expectation Suite Details</h3>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                 <Dropdown
                     value={selectedCategory}
                     options={categoryOptions}

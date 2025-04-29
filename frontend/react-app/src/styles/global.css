@@ -1,0 +1,14 @@
+
+/* ✅ global.css */
+ul {
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+  .pretty-json {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  

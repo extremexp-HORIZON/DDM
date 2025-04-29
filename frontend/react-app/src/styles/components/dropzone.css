@@ -1,0 +1,132 @@
+/***********************************Dropzone Styles**************************************/
+
+/* Add custom CSS for form and dropzone styling */
+/* Light Theme */
+.light-theme .form-control {
+  background-color: #fff;  /* White background for form fields in light mode */
+  color: #333;  /* Dark text color for light mode */
+}
+
+.dropzone-container {
+  border: 1px dashed #ccc; /* Border style */
+  padding: 1rem; /* Space inside the container */
+  text-align: center; /* Center text */
+  min-height: 3rem; /* Minimum height for the container */
+  display: flex; /* Enable flexbox */
+  flex-direction: column; /* Stack content vertically */
+  justify-content: center; /* Center content vertically */
+  align-items: center; /* Center content horizontally */
+  background-color: #f8f9fa; /* Light background */
+  font-size: 1rem; /* Base font size */
+  transition: background-color 0.3s ease, border-color 0.3s ease; /* Smooth theme transitions */
+}
+
+.light-theme .dropzone-container {
+  border-color: #444;
+  background-color: #fff; /* Light background for dropzone */
+  border: 1px dashed #333;
+}
+
+.light-theme .dropzone-text {
+  color: #666; /* Lighter text color for light theme */
+}
+
+.dark-theme .dropzone-container {
+  border-color: #ccc;  /* Dark border for dropzone */
+  background-color: #212529; /* Dark background for dropzone */
+  border: 1px dashed #ccc;
+}
+
+.dark-theme .dropzone-text {
+  color: #bbb;  /* Lighter text color for dark theme */
+}
+
+/* Ensure that the form-group has enough space for inputs */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Style for file input in both themes */
+input[type="file"] {
+  background-color: inherit; /* Inherit background color for file input */
+  color: inherit; /* Inherit text color for file input */
+  border: 1px solid #ccc; /* Default border for file input */
+}
+
+input[type="file"]:focus {
+  border-color: #007bff;
+}
+
+/* For smooth background transition */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.dropzone-container:hover {
+  border-color: #007bff;
+}
+
+
+/* FileUpload Component */
+.dark-mode .p-fileupload {
+  background-color: #212529;
+}
+
+.dark-mode .p-fileupload-header {
+  background-color: #212529;
+}
+
+
+/* File Upload Drag & Drop Area */
+.dark-mode .p-fileupload-content {
+  background-color: #212529;
+}
+
+/* Progress Bar */
+.dark-mode .p-progressbar {
+  background-color: #212529;
+}
+
+.dark-mode .p-progressbar .p-progressbar-value {
+  background-color: #4caf50;
+}
+
+
+/* Buttons */
+.dark-mode .p-button {
+  background-color: inherit;
+
+}
+
+.dark-mode .p-button:hover {
+  background-color: inherit;
+}
+
+/* Input Fields */
+.dark-mode .p-inputtext {
+  background-color: #212529;
+  color:#fff;
+}
+
+.dark-mode .p-inputtextarea {
+  background-color: #212529;
+  color:#fff;
+}
+
+
+.dark-mode .p-fileupload .p-fileupload-advanced .p-component{
+  background-color: #212529; 
+}
+
+.dark-mode .p-fileupload .p-fileupload-buttonbar {
+  background-color: #4444; 
+}
+
+.dark-mode .p-panel.p-panel-toggleable .p-panel-header{
+  background-color: #4444;
+  color: #ffffff;
+}
+
+.dark-mode .p-panel.p-panel-toggleable .p-panel-content {
+  background-color: #212529;
+  color: #ffffff;
+}

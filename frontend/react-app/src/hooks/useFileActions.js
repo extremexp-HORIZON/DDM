@@ -38,11 +38,17 @@ export const useFileActions = (reload, isDarkMode = false) => {
   };
 
 
+  const handleDownloadMultiple = async (fileIds) => {
+    try {
+      await FILES_API.downloadMultipleFiles(fileIds);
+    } catch (error) {
+      showMessage(toast, "error", `Multiple download failed: ${error.message}`);
+    }
+  };
 
 
 
-
-  return { handleDownload, handleDelete };
+  return { handleDownload, handleDelete, handleDownloadMultiple };
 
 
 };

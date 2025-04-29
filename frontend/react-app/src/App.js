@@ -8,16 +8,19 @@ import FileUploader from "./pages/UploadFiles";
 import ChunkUploader from "./pages/UploadChunks";
 import LinkUploader from "./pages/UploadLinks";
 import Catalog from "./pages/Catalog";
-import MyCatalog from "./pages/MyCatalog";
+import MyCatalog from "./pages/MyCatalog";  
+import ExpectationSuites from "./pages/ExpectationSuites";
 import SetPolicies from "./pages/SetPolicies";
 import SetExpectations from "./pages/SetExpectations";
+import ValidationsResults from "./pages/ValidationsResults"; 
 import ExperimentCards from "./pages/ExperimentCards";
 import Parametrics from "./pages/Parametrics";
-
-
+import "./styles/layout.css";
+import "./styles/global.css";
 import "primeicons/primeicons.css";
-import "./Layout.css";
-import "./App.css";
+
+// import "./Layout.css";
+// import "./App.css";
 
 function App() {
   return (
@@ -33,7 +36,9 @@ function App() {
                 <Route path="/upload-async" element={<ChunkUploader />} />
                 <Route path="/upload-links" element={<LinkUploader />} />
                 <Route path="/set-policies" element={<SetPolicies />} />
+                <Route path="/expectation-suites" element={<ExpectationSuites />} />
                 <Route path="/set-expectations" element={<SetExpectations />} />
+                <Route path="/validation-results" element={<ValidationsResults/>} />
                 <Route path="/experiment-cards" element={<ExperimentCards />} />
                 <Route path="/parametrics" element={<Parametrics />} />
               </Routes>

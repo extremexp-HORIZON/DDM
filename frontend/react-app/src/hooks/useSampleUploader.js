@@ -23,57 +23,60 @@ export const useSampleUploader = ({
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("suite_name", suiteName)
+    formData.append("suite_name", suiteName);
 
     try {
       setLoadingExpectations(true);
+
       const response = await EXPECTATIONS_API.uploadSample(formData);
       const { expectation_task_id, description_task_id, dataset_id } = response.data;
+
       setDatasetId(dataset_id);
       showMessage(toast, 'success', 'File uploaded!');
-      const expectationResult = await handleExpectations(expectation_task_id);
+
+      const expectationResponse = await handleExpectations(expectation_task_id);
+      const expectationResult = expectationResponse?.result || expectationResponse;
+
       setLoadingExpectations(false);
 
-      // Column-level expectations
+      // ✅ Handle column-level expectations
       const initialExpectations = {};
-      if (Array.isArray(expectationResult.expectations)) {
-        expectationResult.expectations.forEach(exp => {
-          const column = exp.column;
-          if (!initialExpectations[column]) initialExpectations[column] = {};
-          Object.entries(exp.checks || {}).forEach(([checkName, checkDetails]) => {
-            initialExpectations[column][checkName] = {
-              ...(checkDetails.args || {}),
+      const allColumnData = expectationResult.expectations || {};
+      const columnNames = expectationResult.column_names || [];
+
+      for (const column of columnNames) {
+        const categories = allColumnData[column];
+        if (!categories) continue;
+
+        initialExpectations[column] = {};
+
+        for (const [category, rules] of Object.entries(categories)) {
+          for (const rule of rules) {
+            initialExpectations[column][rule.expectation_type] = {
+              ...(rule.kwargs || {}),
               _enabled: false
             };
-          });
-        });
+          }
+        }
       }
 
-      // Table-level expectations
+      // ✅ Handle table-level expectations
       const initialTableExpectations = {};
-      const tableRules = expectationResult.categorized?.table || {};
-      const tableValues = Object.values(expectationResult.table_expectations || {}).flat();
+      const tableData = expectationResult.table_expectations || {};
 
-      for (const rules of Object.values(tableRules)) {
-
+      for (const rules of Object.values(tableData)) {
         for (const rule of rules) {
-          const defaultArgs = (rule.arguments || []).reduce((acc, arg) => {
-            acc[arg.name] = arg.expected_value ?? "";
-            return acc;
-          }, {});
+          const args = rule.kwargs || {};
+          const hasValues = Object.values(args).some(v => v !== null && v !== "");
 
-          const matchedRule = tableValues.find(exp => exp.name === rule.name);
-          const providedArgs = matchedRule?.args || {};
-
-          initialTableExpectations[rule.name] = {
-            ...defaultArgs,
-            ...providedArgs,
+          initialTableExpectations[rule.expectation_type] = {
+            ...args,
             _enabled: false
           };
         }
       }
 
-      // Final state updates
+      // ✅ State update
       setSelectedExpectations(initialExpectations);
       setTableExpectations(initialTableExpectations);
       setSuiteName(dataset_id || "default_dataset");
@@ -81,17 +84,24 @@ export const useSampleUploader = ({
       showMessage(toast, 'success', 'Expectations completed!');
       setActiveIndex(prev => prev + 1);
 
-      // Descriptions
-      setLoadingDescriptions(true);
-      const descriptionResult = await handleDescriptions(description_task_id);
-      setSelectedExpectations(prev => {
-        const updated = { ...prev };
-        descriptionResult.forEach(({ column, description }) => {
-          if (updated[column]) updated[column].description = description;
+      // ✅ Handle descriptions (optional)
+      if (description_task_id) {
+        setLoadingDescriptions(true);
+
+        const descriptionResult = await handleDescriptions(description_task_id);
+
+        setSelectedExpectations(prev => {
+          const updated = { ...prev };
+          descriptionResult.forEach(({ column, description }) => {
+            if (updated[column]) {
+              updated[column].description = description;
+            }
+          });
+          return updated;
         });
-        return updated;
-      });
-      setLoadingDescriptions(false);
+
+        setLoadingDescriptions(false);
+      }
 
     } catch (err) {
       setLoadingExpectations(false);

@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as a parent image
-FROM node:21-alpine
+FROM node:18-alpine3.20
+
 ENV NODE_ENV=development
+ENV NODE_OPTIONS=--openssl-legacy-provider
+
 # Set the working directory in the container
 WORKDIR /react-app/src/app
 

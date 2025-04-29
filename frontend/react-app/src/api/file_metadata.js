@@ -1,5 +1,7 @@
 // src/api/fileMetadata.js
 import axios from "axios";
+import { useToast } from "../context/ToastContext";
+import { showMessage } from "../utils/messages";
 import { BASE_URL } from "./base";
 
 export const FILE_METADATA_API = {
@@ -32,6 +34,12 @@ export const FILE_METADATA_API = {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
-  }
+  },
+
+  getFileMetadataById: async (fileId) => {
+    const response = await axios.get(`${BASE_URL}/file_metadata/${fileId}`);
+    return response.data;
+  },
+
 
 };

@@ -45,50 +45,50 @@ class FileUploaderMetadataResource(Resource):
 
         return {'message': 'Uploader Metadata added successfully', 'file_id': file.id}, 201
 
-# PUT: Update uploader metadata for a specific file
-@uploader_metadata_ns.expect(uploader_metadata_model)  # Expect the File model for PUT
-@uploader_metadata_ns.doc(description="Update uploader metadata for a specific file.", security='apikey')
-@uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
-@uploader_metadata_ns.response(400, 'Invalid JSON')
-@uploader_metadata_ns.response(404, 'File Not Found')
-def put(self, file_id):
-    """Update the uploader_metadata for a specific file."""
-    file = get_file_record(file_id)
-    if not file:
-        return {'message': 'File not found'}, 404
+    # PUT: Update uploader metadata for a specific file
+    @uploader_metadata_ns.expect(uploader_metadata_model)  # Expect the File model for PUT
+    @uploader_metadata_ns.doc(description="Update uploader metadata for a specific file.", security='apikey')
+    @uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
+    @uploader_metadata_ns.response(400, 'Invalid JSON')
+    @uploader_metadata_ns.response(404, 'File Not Found')
+    def put(self, file_id):
+        """Update the uploader_metadata for a specific file."""
+        file = get_file_record(file_id)
+        if not file:
+            return {'message': 'File not found'}, 404
 
-    metadata = request.json.get("uploader_metadata")
-    success, error = add_or_update_uploader_metadata(file, metadata)
-    if not success:
-        return {'message': error}, 400
+        metadata = request.json.get("uploader_metadata")
+        success, error = add_or_update_uploader_metadata(file, metadata)
+        if not success:
+            return {'message': error}, 400
 
-    return {'message': 'Uploader metadata updated successfully', 'file_id': file.id}, 200
+        return {'message': 'Uploader metadata updated successfully', 'file_id': file.id}, 200
 
 
-# GET: Retrieve uploader metadata for a specific file
-@uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
-@uploader_metadata_ns.response(404, 'File Not Found')
-@uploader_metadata_ns.doc(description="Retrieve uploader metadata for a specific file", security='apikey')
-def get(self, file_id):
-    """Retrieve the uploader_metadata for a specific file."""
-    file = get_file_record(file_id)
-    if not file:
-        return {'message': 'File not found'}, 404
-    return {'uploader_metadata': file.uploader_metadata}, 200
+    # GET: Retrieve uploader metadata for a specific file
+    @uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
+    @uploader_metadata_ns.response(404, 'File Not Found')
+    @uploader_metadata_ns.doc(description="Retrieve uploader metadata for a specific file", security='apikey')
+    def get(self, file_id):
+        """Retrieve the uploader_metadata for a specific file."""
+        file = get_file_record(file_id)
+        if not file:
+            return {'message': 'File not found'}, 404
+        return {'uploader_metadata': file.uploader_metadata}, 200
 
-def delete(self, file_id):
-    """Delete the uploader_metadata for a specific file (from Zenoh + DB)."""
-    file = get_file_record(file_id)
-    if not file:
-        return {'message': 'File not found'}, 404
-    metadata_deleted, error = delete_uploader_metadata_from_zenoh(file)
-    if error:
-        return {'message': error}, 500
-    if metadata_deleted:
-        logger.info(f"✅ Metadata deleted from Zenoh for file {file.id}")
-    else:
-        logger.warning(f"⚠️ Metadata not found in Zenoh for file {file.id}")
-    return {'message': 'Uploader metadata deleted successfully'}, 200
+    def delete(self, file_id):
+        """Delete the uploader_metadata for a specific file (from Zenoh + DB)."""
+        file = get_file_record(file_id)
+        if not file:
+            return {'message': 'File not found'}, 404
+        metadata_deleted, error = delete_uploader_metadata_from_zenoh(file)
+        if error:
+            return {'message': error}, 500
+        if metadata_deleted:
+            logger.info(f"✅ Metadata deleted from Zenoh for file {file.id}")
+        else:
+            logger.warning(f"⚠️ Metadata not found in Zenoh for file {file.id}")
+        return {'message': 'Uploader metadata deleted successfully'}, 200
 
 
 

@@ -1,5 +1,3 @@
-// src/api/uploader_metadata.js
-
 import axios from "axios";
 import { BASE_URL } from "./base";
 
@@ -23,6 +21,20 @@ export const UploaderMetadataAPI = {
         error?.response?.data?.message ||
         error.message ||
         "Failed to upload uploader metadata";
+      throw new Error(message);
+    }
+  },
+
+  getUploaderMetadataById: async (fileId) => {
+    const url = `${BASE_URL}/uploader_metadata/${fileId}`;
+    try {
+      const response = await axios.get(url);
+      return response.data; // assuming API returns JSON
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        error.message ||
+        "Failed to fetch uploader metadata";
       throw new Error(message);
     }
   },

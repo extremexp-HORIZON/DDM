@@ -1,0 +1,16 @@
+/* Dialog (Metadata Popup) */
+.dark-mode .p-dialog,
+.dark-mode .p-dialog-footer {
+  background-color: #212529;
+}
+
+.dark-mode .p-dialog-header,
+.dark-mode .p-dialog-content {
+  background-color: #212529!important;
+  color: #ffffff!important;
+}
+
+/* Ensure metadata text is readable */
+.dark-mode .p-dialog .p-inputtextarea {
+  background-color: #212529;
+}

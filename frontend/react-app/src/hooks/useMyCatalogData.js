@@ -39,7 +39,7 @@ export const useMyCatalogData = (filters, toast) => {
     };
 
     try {
-      const data = await CATALOG_API.fetchCatalog(params);
+      const data = await CATALOG_API.fetchMyCatalog(params);
       setDatasets(data.data);
       setTotalRecords(data.total);
       setFilteredRecords(data.filtered_total || data.total);

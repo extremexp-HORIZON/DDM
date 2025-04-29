@@ -1,29 +1,40 @@
 import React, { useState } from "react";
 import { Button } from "primereact/button";
 import { ProgressSpinner } from "primereact/progressspinner";
+import "../../styles/components/stepper.css"
+import { useExpectationSuite } from "../../hooks/useExpectationSuite";
+import ExpectationSuiteViewer from "../../components/ExpectationSuiteViewer";
 
 const StepFinalize = ({ saveExpectations }) => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchedSuite, setFetchedSuite] = useState(null);
+
+
+  const { suite, fetchSuite, loading: loadingSuite } = useExpectationSuite();
 
   const handleSave = async () => {
-    setLoading(true);
-    const success = await saveExpectations();
-    setLoading(false);
-
-    if (success) {
+    const response = await saveExpectations();
+    if (response.success) {
       setSubmitted(true);
-    } else {
-      // Optionally show an error fallback
-      alert("Something went wrong while saving.");
+      await fetchSuite(response.suite_id);
     }
   };
+  
+ 
 
   return (
     <div>
       <h3 className="text-lg font-semibold mb-4">Finalize</h3>
 
-      {!submitted ? (
+      {submitted && suite  ? (
+        <div>
+          <ExpectationSuiteViewer suite={suite } animate/>
+          <div className="text-center text-sm text-green-500">
+            🎉 Expectations saved! Triggering backend...
+          </div>
+        </div>
+      ) : (
         <div className="flex flex-col items-center gap-4">
           {loading ? (
             <ProgressSpinner style={{ width: '40px', height: '40px' }} strokeWidth="4" />
@@ -35,12 +46,8 @@ const StepFinalize = ({ saveExpectations }) => {
             />
           )}
         </div>
-      ) : (
-        <div className="text-center text-sm text-green-500">
-          🎉 Expectations saved! Triggering backend...
-          {/* Optional: add countdown, animation or redirect */}
-        </div>
       )}
+
 
       <p className="text-center text-sm text-gray-500 dark:text-gray-400 italic mt-4">
         🚧 Under construction — more features coming soon

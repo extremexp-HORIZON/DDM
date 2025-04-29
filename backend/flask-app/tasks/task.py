@@ -1,15 +1,15 @@
 
 import eventlet
 eventlet.monkey_patch()
-from celery import shared_task , Task
+from celery import shared_task 
 from extensions.db import db
 from extensions.llm import llm
 from utils.zenoh_file_handler import ZenohFileHandler,merge_file_chunks_from_zenoh,download_file_from_zenoh,save_processed_file
 from utils.file_df_loader import load_dataframe 
 from utils.file_helpers import  cleanup_files,load_dataframe_or_image, compute_file_hash, download_file_from_url
 from utils.file_handler import get_file_record,update_file_record_in_db, store_file_metadata_in_db
-from utils.expectations_handler import save_expectation_result, get_expectation_suite
-from services.expectation_engine import build_expectation_config, run_expectation_suite
+from utils.expectations_handler import save_validation_result, get_expectation_suite
+from services.expectation_engine import run_expectation_suite, build_expectations_grouped,build_metadata
 from services.dataset_profiling import generate_profile_report
 from services.metadata_generator import generate_and_save_dataframe_metadata
 import traceback
@@ -18,7 +18,7 @@ import requests
 import os
 import pandas as pd
 import json
-from time import sleep
+
 
 # Configure logging to print to console and a file
 logging.basicConfig(
@@ -150,8 +150,8 @@ def build_expectations_task(self, zenoh_file_path):
             df=df_or_error
         else:
             return {"error": df_or_error}
-
-        expectations, table_expectations, column_names, categorized = build_expectation_config(df)
+        categorized = build_metadata()
+        expectations, table_expectations, column_names = build_expectations_grouped(categorized,df)
 
         return {
             "categorized" : json.loads(json.dumps(categorized, default=str)),
@@ -202,17 +202,18 @@ def run_expectation_suites_task(self, file_id, suite_ids):
             if not suite or not suite.expectations:
                 continue
 
-            suite_result = run_expectation_suite(df, suite.expectations)
+            suite_result, column_descriptions = run_expectation_suite(df, suite.to_json())
 
             result_json = json.dumps(suite_result, default=str)
             zenoh_file_path = f"projects/{project_id}/files/{file_id}/{file_id}_{suite_id}.json"
 
             success = ZenohFileHandler.put_file(zenoh_file_path, result_json)
             if success:
-                save_expectation_result(file_record, suite, suite_result, zenoh_file_path)
+                save_validation_result(file_record, suite, suite_result, zenoh_file_path)
             results_summary.append({
                 "suite_id": suite_id,
                 "zenoh_path": zenoh_file_path,
+                "column_descriptions": column_descriptions,
                 "summary": suite_result.get("summary", {})
             })
         return {

@@ -21,6 +21,12 @@ export const useCatalogData = (filters, toast) => {
     const { first, rows, sortField, sortOrder } = lazyParams;
 
     const formatFilters = (v) => (!v || v.length === 0 ? undefined : Array.isArray(v) ? v.join(",") : v);
+    
+    const normalizeFileTypes = (fileTypes) => {
+      if (!fileTypes || fileTypes.length === 0) return undefined;
+      return fileTypes.map(ft => ft.replace(/^\./, '').toLowerCase()).join(",");
+    };
+
 
     const params = {
       page: Math.floor(first / rows) + 1,
@@ -29,7 +35,7 @@ export const useCatalogData = (filters, toast) => {
       filename: formatFilters(filters.filename),
       user_id: formatFilters(filters.user_id),
       use_case: formatFilters(filters.use_case),
-      file_type: formatFilters(filters.file_type),
+      file_type: normalizeFileTypes(filters.file_types),
       project_id: formatFilters(filters.project_id),
       parent_files: formatFilters(filters.parent_files),
       size_from: filters.size_from ? parseInt(filters.size_from, 10) : undefined,

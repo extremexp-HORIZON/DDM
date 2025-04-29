@@ -3,8 +3,13 @@ import React from "react";
 import { Calendar } from "primereact/calendar";
 import { Chips } from "primereact/chips";
 import { InputText } from "primereact/inputtext";
+import "../styles/components/form.css"; 
+import "../styles/components/datatable.css";
+import { MultiSelect } from "primereact/multiselect";
+import { fileTypeItemTemplate } from "../utils/icons"; 
 
-const CatalogFilters = ({ filters, setFilters }) => {
+
+const CatalogFilters = ({ filters, setFilters, fileTypes }) => {
   return (
     <div className="filters-panel">
       <div className="filter-item">
@@ -58,10 +63,15 @@ const CatalogFilters = ({ filters, setFilters }) => {
 
       <div className="filter-item">
         <label>File Types:</label>
-        <Chips
-          value={filters.file_type}
-          onChange={(e) => setFilters({ ...filters, file_type: e.value })}
-          placeholder={filters.file_type?.length ? "" : "  Add file types"}
+        <MultiSelect
+          value={filters.file_types}
+          options={fileTypes}  // fileTypes must be passed as a prop
+          onChange={(e) => setFilters({ ...filters, file_types: e.value })}
+          placeholder="Select File Types"
+          display="chip"
+          filter
+          itemTemplate={fileTypeItemTemplate}
+          className="filter-input"
         />
       </div>
 

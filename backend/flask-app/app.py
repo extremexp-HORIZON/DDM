@@ -12,6 +12,7 @@ from routes.files_routes import files_ns
 from routes.metadata_routes import file_metadata_ns, uploader_metadata_ns
 from routes.catalog import catalog_ns
 from routes.expectation_routes import expectations_ns
+from routes.validation_routes import validations_ns
 from routes.parametric_routes import parametrics_ns
 from flask_cors import CORS
 
@@ -61,13 +62,14 @@ def create_app(config_object="config.Config"):
     api.add_namespace(uploader_metadata_ns)
     api.add_namespace(catalog_ns)
     api.add_namespace(expectations_ns)
+    api.add_namespace(validations_ns)
     api.add_namespace(parametrics_ns)
 
 
 
     # Create database tables if they don't exist
     with app.app_context():
-
+        
         db.create_all()
 
         from routes.task_routes import view_tasks_bp

@@ -1,0 +1,35 @@
+/* ✅ components/sidebar.css */
+.sidebar-container {
+    height: 100%;
+    transition: background-color 0.3s ease;
+  }
+  .sidebar-container.collapsed {
+    overflow: hidden;
+  }
+  .sidebar-dark {
+    background-color: #212529 !important;
+    color: #fff !important;
+  }
+  .sidebar-light {
+    background-color: #fff !important;
+    color: #333 !important;
+  }
+  .cdb-sidebar .cdb-sidebar-menu-item {
+    display: flex;
+    align-items: center;
+  }
+  .cdb-sidebar-menu-item:hover {
+    background-color: #007bff;
+    color: #fff;
+  }
+  .theme-switch-container:hover {
+    color: #007bff;
+  }
+  .sidebar-dark .cdb-sidebar-menu-item a {
+    color: #fff !important;
+  }
+  .sidebar-light .cdb-sidebar-menu-item a {
+    color: #333 !important;
+  }
+  
+  

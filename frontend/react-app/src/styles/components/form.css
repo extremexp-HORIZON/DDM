@@ -1,0 +1,162 @@
+
+.dataset-container {
+  padding: 5px;
+}
+
+/* Dark Mode Styles */
+.dark-mode {
+  background-color: #212529; 
+  color: #ffffff;
+}
+
+.dark-mode .p-inputtext,
+.dark-mode .p-multiselect-header,
+.dark-mode .p-calendar {
+  background-color: #212529; /* Slightly lighter dark background for form fields */
+  color :#b0b0b0;
+  width: 100%; 
+}
+
+.dark-mode .p-component{
+  background-color: #212529; /* Slightly lighter dark background for form fields */
+  border-color: #888;
+}
+
+.dark-mode .p-datatable .p-datatable-thead > tr > th{
+  background-color: #2e30326a!important;/* Dark background for table rows */
+  color:#b0b0b0;
+}
+
+.dark-mode .p-datatable .p-datatable-thead > tr > th.p-highlight {
+  background-color: inherit; /* Dark background for table rows */
+  color:#007bff;
+}
+
+.dark-mode .p-datatable .p-datatable-tbody > tr > td {
+  background-color: #212529; /* Dark background for table rows */
+}
+
+.dark-mode.p-datatable .p-datatable-tbody > tr > td .p-row-toggler{
+  background-color: inherit;
+  color:#ffffff;
+}
+
+.p-datatable.p-datatable-scrollable > .p-datatable-wrapper > .p-datatable-table > .p-datatable-thead{
+  background-color: inherit;
+}
+
+
+/***********************************FieldPanel Styles**************************************/
+.light-mode .p-inputtext,
+.light-mode .p-multiselect,
+.light-mode .p-calendar {
+  background-color: #fff; 
+  color: #000;
+  border-color: #ccc;
+  width: 100%; 
+}
+
+.filters-panel {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* Ensure 5 columns */
+  gap: 0px 20px; /* Row gap: 16px, Column gap: 20px */
+  width: 100%;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px; /* Space between label and input */
+  width: 100%; 
+}
+
+
+/* Responsive Grid Adjustments */
+@media (max-width: 1600px) {  /* Medium screens (22-inch) */
+  .filters-panel {
+    grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  }
+}
+
+@media (max-width: 1400px) {  /* Smaller screens (15.6-inch) */
+  .filters-panel {
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  }
+}
+
+@media (max-width: 1024px) {  /* Tablets */
+  .filters-panel {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns */
+  }
+}
+
+@media (max-width: 768px) {  /* Mobile */
+  .filters-panel {
+    grid-template-columns: repeat(1, 1fr); /* Stack filters vertically */
+  }
+}
+
+
+.filters-panel div {
+  margin-bottom: 10px;
+}
+
+.filters-panel label {
+  font-weight: bold;
+}
+
+/* Applying the font style to form labels */
+.dark-mode label,
+.light-mode label {
+  text-overflow: ellipsis;
+  font-size: 1rem;
+  font-weight: normal; /* Optional: Make labels bold for better visibility */
+}
+
+.p-chips .p-chips-multiple-container .p-chips-token {
+  margin: 0.2rem !important;
+}
+.dark-mode .p-chips .p-chips-multiple-container .p-chips-token {
+  background-color:#444;
+  color:#fff;
+}
+
+/***********************************Input & Dropdowns Styles**************************************/
+
+.p-dropdown-panel,
+.dark-mode .p-dropdown-panel.p-dropdown-items {
+  background-color:inherit;
+}
+.dark-mode .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  background-color: inherit; /* Highlight color for selected item */
+  color: #fff; /* Text color for selected item */
+}
+
+
+.filter-item label {
+  font-weight: 500;
+}
+
+.p-datepicker,
+.p-datepicker-header {  
+  background:inherit;
+}
+
+ul {
+  padding-left: 0rem;
+  margin-bottom: 0rem;
+}
+
+
+.filters-panel .p-multiselect .p-multiselect-label {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-y: auto;
+
+  padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+  min-height: 1.2rem;
+  align-items: center; 
+  justify-content: flex-start; 
+}
+
+

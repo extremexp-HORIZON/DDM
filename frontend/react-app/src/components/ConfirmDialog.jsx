@@ -1,6 +1,7 @@
 // components/ConfirmDialog.jsx
 import React from "react";
 import { ConfirmDialog as PrimeConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import "../styles/components/dialog.css"
 
 const showConfirm = ({ message, header = "Confirm", icon = "pi pi-exclamation-triangle", accept, reject, isDarkMode = false }) => {
   confirmDialog({

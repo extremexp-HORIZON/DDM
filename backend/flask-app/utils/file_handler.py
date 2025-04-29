@@ -4,10 +4,11 @@ from models.file import File
 import logging
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.utils import secure_filename
+from sqlalchemy import or_, String
+from datetime import datetime
+from dateutil.parser import isoparse
 
 logger = logging.getLogger(__name__)
-
-
 
 
 def get_file_record(file_id):
@@ -134,3 +135,70 @@ def store_file_metadata_in_db(file_id, path, size, file_hash):
 
     db.session.add(file_record)
     db.session.commit()
+    return file_record
+
+
+
+def apply_catalog_filters(query, args):
+    filenames = args.get('filename')
+    use_cases = args.get('use_case')
+    project_ids = args.get('project_id')
+    created_from = args.get('created_from')
+    created_to = args.get('created_to')
+    user_ids = args.get('user_id')
+    file_types = args.get('file_type')
+    parent_files = args.get('parent_files')
+    size_from = args.get('size_from')
+    size_to = args.get('size_to')
+
+    if filenames:
+        query = query.filter(or_(*[File.upload_filename.like(f"%{name}%") for name in filenames]))
+
+    if project_ids:
+        query = query.filter(or_(*[File.project_id.like(f"%{pid}%") for pid in project_ids]))
+
+    if use_cases:
+        query = query.filter(or_(*[File.use_case.contains([case]) for case in use_cases]))
+
+    if created_from:
+        try:
+            query = query.filter(File.created >= isoparse(created_from))
+        except ValueError:
+            raise ValueError('Invalid created_from datetime format')
+
+    if created_to:
+        try:
+            query = query.filter(File.created <= isoparse(created_to))
+        except ValueError:
+            raise ValueError('Invalid created_to datetime format')
+
+    if user_ids:
+        query = query.filter(or_(*[File.user_id.like(f"%{uid}%") for uid in user_ids]))
+
+    if file_types:
+        query = query.filter(or_(*[File.file_type.like(f"%{ftype}%") for ftype in file_types]))
+
+    if parent_files:
+        query = query.filter(or_(*[File.parent_files.cast(String).like(f"%{pfile}%") for pfile in parent_files]))
+
+    if size_from is not None:
+        query = query.filter(File.file_size >= int(size_from))
+
+    if size_to is not None:
+        query = query.filter(File.file_size <= int(size_to))
+
+    return query
+
+def apply_catalog_sorting(query, sort):
+    if sort:
+        sort_parts = sort.split(',')
+        sort_field = sort_parts[0]
+        sort_direction = sort_parts[1] if len(sort_parts) > 1 else 'asc'
+        if hasattr(File, sort_field):
+            col = getattr(File, sort_field)
+            col = col.desc() if sort_direction == 'desc' else col
+            query = query.order_by(col)
+    else:
+        query = query.order_by(File.created.desc())
+    return query
+

@@ -1,0 +1,26 @@
+.my-tabmenu {
+  background-color :inherit;/* Removes underline from all tab items */
+}
+
+
+.my-tabmenu .p-tabmenu-nav li.p-highlight a {
+  text-decoration: none; /* Removes underline from active tab */
+}
+
+.my-tabmenu .p-tabmenu-nav li a {
+  text-decoration: none; /* Removes underline from all tab items */
+}
+/* Ensure the TabMenu container inherits background color */
+.dark-mode .my-tabmenu .p-tabmenu-nav{
+  background-color: inherit !important;  /* Inherit background color from parent */
+}
+
+/* Remove underline from all tab links */
+.dark-mode .my-tabmenu .p-tabmenu-nav .p-tabmenuitem a {
+  text-decoration: none !important;  /* Remove underline from all links */
+  background-color: #212529!important; 
+}
+
+.dark-mop-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link {
+  border-top-right-radius: 0px;
+}

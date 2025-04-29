@@ -54,10 +54,7 @@ class File(db.Model):
             'project_id': self.project_id,
             'file_size': self.file_size,
             'file_type': self.file_type,
-            'recdeleted': self.recdeleted,
-            'uploader_metadata': self.uploader_metadata,
-            'nft_metadata': self.nft_metadata,
-            'file_metadata': self.file_metadata
+            'recdeleted': self.recdeleted
         }
     
     def to_catalog(self):

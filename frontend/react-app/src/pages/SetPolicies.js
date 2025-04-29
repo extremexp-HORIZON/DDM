@@ -5,7 +5,7 @@ import * as ReactDndHtml5Backend from 'react-dnd-html5-backend';
 import { defaultValidator, QueryBuilder } from 'react-querybuilder';
 import { fields } from '../constants/fields';
 import 'react-querybuilder/dist/query-builder.css';
-import "./styles.css";
+import "../styles/components/querybuilder.css";
 import { QueryBuilderFluent } from '@react-querybuilder/fluent';
 import { FluentProvider, webLightTheme, webDarkTheme, Button } from '@fluentui/react-components';
 import { useTheme } from "../context/ThemeContext"; 

@@ -16,11 +16,21 @@ export const ExpectationSaver = ({
     try {
       const suiteName = useCase.name;
 
-      const descriptions = Object.fromEntries(
+      // Column descriptions
+      const columnDescriptions = Object.fromEntries(
         Object.entries(selectedExpectations)
           .filter(([_, val]) => val.description)
           .map(([col, val]) => [col, val.description])
       );
+
+      // Table expectation descriptions
+      const tableExpectationDescriptions = Object.fromEntries(
+        Object.entries(tableExpectations)
+          .filter(([_, config]) => config._enabled && config.description)
+          .map(([type, config]) => [type, config.description])
+      );
+
+      const columnNames = Object.keys(selectedExpectations);
 
       const filteredColumnExpectations = Object.entries(selectedExpectations).reduce((acc, [col, rules]) => {
         const enabledRules = Object.entries(rules).filter(([_, val]) => val._enabled);
@@ -37,7 +47,13 @@ export const ExpectationSaver = ({
         return acc;
       }, {});
 
-      const geFormatted = toGEFormat(suiteName, filteredColumnExpectations, filteredTableExpectations, descriptions);
+      const geFormatted = toGEFormat(
+        suiteName,
+        filteredColumnExpectations,
+        filteredTableExpectations,
+        columnDescriptions,
+        tableExpectationDescriptions
+      );
 
       const payload = {
         suite_name: suiteName,
@@ -48,15 +64,17 @@ export const ExpectationSaver = ({
         description: useCase.description,
         use_case: suiteName,
         dataset_id: datasetId,
+        column_descriptions: columnDescriptions, 
+        column_names: columnNames,              
       };
 
-      await EXPECTATIONS_API.save(payload);
+      const response = await EXPECTATIONS_API.save(payload);
       showMessage(toast, "success", "Expectations saved successfully!");
-      return true; //
+      return { success: true, suite_id: response.data.suite_id };
     } catch (error) {
       showMessage(toast, "error", "Failed to save expectations");
       console.error(error);
-      return false; 
+      return { success: false };
     }
   };
 };

@@ -1,5 +1,6 @@
 import React from "react";
 import { TabMenu } from "primereact/tabmenu";
+import "../styles/components/tabmenu.css"; // Adjust the path as necessary
 
 const CatalogRowExpansion = ({ data, activeTabIndex, setActiveTabIndex }) => {
   const tabs = [

@@ -4,7 +4,7 @@ import { Button } from "primereact/button";
 import SupportedFileTypesDialog from "./SupportedFileTypesDialog";
 import { useSupportedFileTypesDialog } from "../hooks/useSupportedFileTypesDialog";
 import { useTheme } from "../context/ThemeContext";
-
+import "../styles/components/dropzone.css";
 
 const UploadFormHeader = ({ 
   options, 

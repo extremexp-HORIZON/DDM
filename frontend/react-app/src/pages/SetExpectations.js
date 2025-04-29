@@ -10,13 +10,14 @@ import StepUseCaseDetails from '../components/expectations/StepUseCaseDetails';
 import StepUploadSampleFile from '../components/expectations/StepUploadSampleFile';
 import StepDefineExpectations from '../components/expectations/StepDefineExpectations';
 import { useSampleUploader } from "../hooks/useSampleUploader";
+import { ExpectationSaver } from "../hooks/useExpectationSaver";
+import { useSupportedFileTypes } from '../hooks/useSupportedFileTypes';
 import { useExpectationsManager } from "../hooks/useExpectationsManager";
 import { useArgHandlers } from '../hooks/useArgHandlers';
 import { useSupportedFileTypesDialog } from "../hooks/useSupportedFileTypesDialog";
 import { categoryOptions, itemTemplate } from '../utils/categoryOptions';
 import StepFinalize from '../components/expectations/StepFinalize';
-import { ExpectationSaver } from "../hooks/useExpectationSaver";
-import { useSupportedFileTypes } from '../hooks/useSupportedFileTypes';
+
 
 
 const SetExpectations = () => {
@@ -82,6 +83,7 @@ const SetExpectations = () => {
     tableExpectations,
     selectedCategory,
     customCategory,
+    selectedFileTypes,
     datasetId
   });
   

@@ -2,13 +2,12 @@
 
 .set-policies-container {
   padding: 20px;
-  background: var(--rqb-background-color);
 }
 
 
-  
 .queryBuilder {
-    min-width: 420px;
+    min-width: 100px;
+    max-width: 100%;
   }
 
 
@@ -80,10 +79,11 @@
   
   /* 🚀 Dark Theme Styles */
   .dark-theme {
-    background-color: #1e1e1e;
+    background-color: #212529;
     color: white;
   }
-  
+
+ 
   .dark-theme .queryBuilder-branches {
     border-color: #bb86fc;
     
@@ -108,5 +108,30 @@
   
   .dark-theme .rule.queryBuilder-invalid .rule-value {
     background-color: #66339999; /* Slightly stronger invalid color */
+  }
+  
+
+  .queryBuilder .ruleGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .queryBuilder .rule {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    max-width: 100%;
+  }
+  
+  .queryBuilder .rule > * {
+    flex: 1 1 auto;
+    min-width: 100px;
+    max-width: 100%;
   }
   

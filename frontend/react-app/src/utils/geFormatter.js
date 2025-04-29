@@ -1,36 +1,40 @@
-export const toGEFormat = (suiteName, columnExpectations, tableExpectations, descriptions = {}) => {
-    const expectations = [];
-  
-    // Column-level expectations
-    for (const [column, checks] of Object.entries(columnExpectations)) {
-      for (const [expectationType, config] of Object.entries(checks)) {
-        if (config._enabled) {
-          const { _enabled, ...args } = config;
-          expectations.push({
-            expectation_type: expectationType,
-            kwargs: { column, ...args },
-          });
-        }
-      }
+export const toGEFormat = (suiteName, selectedExpectations, tableExpectations, columnDescriptions, tableExpectationDescriptions) => {
+  const expectations = [];
+  const columnNames = [];
+
+  // Column-level expectations
+  for (const [column, checks] of Object.entries(selectedExpectations)) {
+    const enabledChecks = Object.entries(checks).filter(([_, config]) => config._enabled);
+    if (enabledChecks.length > 0) {
+      columnNames.push(column);
     }
-  
-    // Table-level expectations
-    for (const [expectationType, config] of Object.entries(tableExpectations)) {
-      if (config._enabled) {
-        const { _enabled, ...args } = config;
-        expectations.push({
-          expectation_type: expectationType,
-          kwargs: args,
-        });
-      }
+    for (const [expectationType, config] of enabledChecks) {
+      const { _enabled, description, ...args } = config;
+      expectations.push({
+        expectation_type: expectationType,
+        kwargs: { column, ...args },
+      });
     }
-  
-    return {
-      expectation_suite_name: suiteName,
-      expectations,
-      meta: {
-        column_descriptions: descriptions,
-      },
-    };
+  }
+
+  // Table-level expectations
+  for (const [expectationType, config] of Object.entries(tableExpectations)) {
+    if (config._enabled) {
+      const { _enabled, ...args } = config;
+      expectations.push({
+        expectation_type: expectationType,
+        kwargs: args,
+      });
+    }
+  }
+
+  return {
+    expectation_suite_name: suiteName,
+    expectations,
+    meta: {
+      column_descriptions: columnDescriptions,
+      column_names: columnNames,
+      table_expectation_descriptions: tableExpectationDescriptions,
+    },
   };
-  
+};

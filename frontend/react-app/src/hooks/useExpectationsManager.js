@@ -10,75 +10,82 @@ export const useExpectationsManager = ({ toast, showMessage }) => {
   const [suiteName, setSuiteName] = useState("");
 
   const handleExpectations = async (taskId) => {
-    const result = await pollTaskResult(taskId, 1000, 120000);
+    const result = await pollTaskResult(taskId, 1000, 120000); // ✅ No destructuring
     console.log("📦 Raw result from pollTaskResult:", result);
-
-    const tableRules = result.categorized?.table || {};
-    const tableValues = result.table_expectations || {};
-
-    console.log("🧱 Original tableRules:", tableRules);
-    console.log("🗂 table_expectations (raw):", tableValues);
-
-    // Merge arguments into categorized.table from table_expectations
-    for (const [category, rules] of Object.entries(tableRules)) {
-      const enrichedRules = rules.map(rule => {
-        const matching = (tableValues?.[category] || []).find(r => r.name === rule.name);
-        return {
-          ...rule,
-          arguments: matching?.arguments?.length ? matching.arguments : rule.arguments || []
-        };
-      });
-      tableRules[category] = enrichedRules;
-    }
-
-    console.log("✅ Merged tableRules with arguments:", tableRules);
-
-    // Build initial column-level expectations
+  
+    const columnExpectations = result.expectations || {};
+    const tableExpectationsRaw = result.table_expectations || {};
+  
+    const columnRules = {};
     const initialExpectations = {};
-    result.expectations?.forEach(exp => {
-      const col = exp.column;
-      initialExpectations[col] = {};
-      Object.entries(exp.checks || {}).forEach(([rule, details]) => {
-        initialExpectations[col][rule] = {
-          ...(details.args || {}),
-          _enabled: false,
-        };
+  
+    // Loop through each column and categorize its expectations
+    Object.entries(columnExpectations).forEach(([column, categories]) => {
+      initialExpectations[column] = initialExpectations[column] || {};
+  
+      Object.entries(categories).forEach(([category, rules]) => {
+        columnRules[category] = columnRules[category] || [];
+  
+        rules.forEach(rule => {
+          const type = rule.expectation_type;
+          initialExpectations[column][type] = {
+            ...(rule.kwargs || {}),
+            _enabled: false,
+          };
+  
+          if (!columnRules[category].some(r => r.name === type)) {
+            columnRules[category].push({
+              name: type,
+              description: rule.description || "",
+              arguments: Object.entries(rule.kwargs || {}).map(([name, value]) => ({
+                name,
+                expected_value: value
+              })),
+            });
+          }
+        });
       });
     });
-
-    console.log("📌 Parsed initial column-level expectations:", initialExpectations);
-
-    // Build initial table-level expectations
+  
     const initialTableExpectations = {};
-    for (const [category, rules] of Object.entries(tableRules)) {
-      for (const rule of rules) {
-        const matchedRule = (tableValues[category] || []).find(tv => tv.name === rule.name);
-        const matchedArgs = matchedRule?.args || {};
-        const hasValues = Object.values(matchedArgs).some(v => v !== null && v !== "");
-
-        const defaults = (rule.arguments || []).reduce((acc, arg) => {
-          acc[arg.name] = matchedArgs[arg.name] ?? arg.expected_value ?? "";
-          return acc;
-        }, {});
-
-        initialTableExpectations[rule.name] = {
-          ...defaults,
-          _enabled: hasValues,
+    const tableRules = {};
+  
+    Object.entries(tableExpectationsRaw).forEach(([category, rules]) => {
+      tableRules[category] = [];
+  
+      rules.forEach(rule => {
+        const args = rule.kwargs || {};
+        const hasValues = Object.values(args).some(v => v !== null && v !== "");
+  
+        initialTableExpectations[rule.expectation_type] = {
+          ...args,
+          _enabled: hasValues
         };
-      }
-    }
-
-    console.log("✅ Final initialTableExpectations:", initialTableExpectations);
-
-    // Update state
-    setExpectationRules({ ...result.categorized, table: tableRules });
-    setExpectations(result.expectations || []);
-    setSelectedExpectations(initialExpectations);
+  
+        tableRules[category].push({
+          name: rule.expectation_type,
+          description: rule.description || "",
+          arguments: Object.entries(args).map(([name, value]) => ({
+            name,
+            expected_value: value
+          })),
+        });
+      });
+    });
+  
+    setExpectations(initialExpectations);
     setTableExpectations(initialTableExpectations);
+    setExpectationRules({
+      ...columnRules,
+      table: tableRules
+    });
     setSuiteName(result.suite_name || "default_suite");
-
-    return result;
+  
+    return result; // ✅ Also update return value
   };
+  
+  
+  
 
   const updateExpectation = (column, rule, enabled, args = {}) => {
     setSelectedExpectations(prev => ({

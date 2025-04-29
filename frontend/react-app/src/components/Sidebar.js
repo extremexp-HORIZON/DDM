@@ -9,7 +9,7 @@ import {
 } from "cdbreact";
 import { NavLink } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext"; // Import useTheme
-
+import "../styles/components/sidebar.css"; // Import your CSS file
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -37,7 +37,7 @@ const Sidebar = () => {
         >
           {!isCollapsed && (
             <a href="/" className="text-decoration-none" style={{ color: "inherit" }}>
-              Zenoh Manager
+              ExtremeXp-DDM
             </a>
           )}
         </CDBSidebarHeader>
@@ -88,6 +88,15 @@ const Sidebar = () => {
                 {isCollapsed ? "" : "Share Files"}
               </CDBSidebarMenuItem>
             </NavLink>
+            <NavLink to="/expectation-suites" exact="true" activeClassName="activeClicked">
+              <CDBSidebarMenuItem
+                icon="clipboard-list"
+                textFontSize="14px"
+                style={{ color: isDarkMode ? "#fff" : "#333" }}
+              >
+                {isCollapsed ? "" : "Expectation Suites"}
+              </CDBSidebarMenuItem>
+            </NavLink>
             <NavLink to="/set-expectations" exact="true" activeClassName="activeClicked">
               <CDBSidebarMenuItem
                 icon="balance-scale"
@@ -95,6 +104,15 @@ const Sidebar = () => {
                 style={{ color: isDarkMode ? "#fff" : "#333" }}
               >
                 {isCollapsed ? "" : "Set Expectations"}
+              </CDBSidebarMenuItem>
+            </NavLink>
+            <NavLink to="/validation-results" exact="true" activeClassName="activeClicked">
+              <CDBSidebarMenuItem
+                icon="check-circle"
+                textFontSize="14px"
+                style={{ color: isDarkMode ? "#fff" : "#333" }}
+              >
+                {isCollapsed ? "" : "Validation Results"}
               </CDBSidebarMenuItem>
             </NavLink>
             <NavLink to="/set-policies" exact="true" activeClassName="activeClicked">

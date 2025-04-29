@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext"; 
 import CatalogRowExpansion from "../components/CatalogRowExpansion";
-
 import CatalogFilters from "../components/CatalogFilters";
 import { catalogColumns } from "../constants/catalogColumns";
-
+import { useAllFileTypes } from "../hooks/useAllFileTypes";
+import { useFileActions } from "../hooks/useFileActions";
 import { useMyCatalogData } from "../hooks/useMyCatalogData";
 import { useCatalogCellEditor } from "../hooks/useCatalogCellEditor";
 
@@ -21,6 +21,12 @@ const MyCatalog = () => {
   const { isDarkMode } = useTheme(); // Get dark mode from context
 
   const toast = useToast();
+
+  const { 
+    fileTypes, 
+    loading: fileTypesLoading, 
+    error: fileTypesError 
+  } = useAllFileTypes();
 
   const [filters, setFilters] = useState({
     filename: "",
@@ -123,14 +129,25 @@ const MyCatalog = () => {
       )}
     </div>
   );
+
+  const { 
+    handleDownload, 
+    handleDelete, 
+    handleDownloadMultiple
+  } = useFileActions(reload);
+  
    
   return (
     <div className={`dataset-container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
       <h2>Catalog</h2>
       
       {/* Filters Panel */}
-      <CatalogFilters filters={filters} setFilters={setFilters} />
+      <CatalogFilters 
+        filters={filters} 
+        setFilters={setFilters} 
+        fileTypes={fileTypes}
 
+      />
       {/* DataTable */}
       <DataTable
         loading={loading}
@@ -172,6 +189,44 @@ const MyCatalog = () => {
       ))}
 
       </DataTable>
+
+      {selectedRows?.length > 0 && (
+          <div
+            style={{
+              marginTop: "1.5rem",
+              display: "flex",
+              gap: "1rem",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              label={`Download ${selectedRows.length} File${selectedRows.length > 1 ? "s" : ""}`}
+              icon="pi pi-download"
+              className="p-button-success"
+              onClick={() => {
+                if (selectedRows.length === 1) {
+                  handleDownload(selectedRows[0].id);
+                } else {
+                  handleDownloadMultiple(selectedRows.map((row) => row.id));
+                }
+              }}
+            />
+    
+            <Button
+              label={`Show ${selectedRows.length} File${selectedRows.length > 1 ? "s" : ""}`}
+              icon="pi pi-info-circle"
+              className="p-button-info"
+              onClick={() => {
+                const info = selectedRows
+                  .map((row) => `ID: ${row.id}, Path: ${row.zenoh_file_path || row.path || "Unknown"}`)
+                  .join("\n");
+                alert(info);
+              }}
+            />
+          </div>
+        )}
+
     </div>
   );
 };

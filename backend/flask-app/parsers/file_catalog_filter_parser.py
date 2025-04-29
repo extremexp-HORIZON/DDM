@@ -1,0 +1,16 @@
+from flask_restx import reqparse
+
+file_catalog_filter_parser = reqparse.RequestParser()
+file_catalog_filter_parser.add_argument('filename', type=str, action='split', help="Filenames")
+file_catalog_filter_parser.add_argument('use_case', type=str, action='split', help="Use Cases")
+file_catalog_filter_parser.add_argument('project_id', type=str, action='split', help="Project IDs")
+file_catalog_filter_parser.add_argument('created_from', type=str, help="Created date from (ISO 8601 format)")
+file_catalog_filter_parser.add_argument('created_to', type=str, help="Created date to (ISO 8601 format)")
+file_catalog_filter_parser.add_argument('user_id', type=str, action='split', help="User IDs")
+file_catalog_filter_parser.add_argument('file_type', type=str, action='split', help="File Types")
+file_catalog_filter_parser.add_argument('parent_files', type=str, action='split', help="Parent file IDs/names")
+file_catalog_filter_parser.add_argument('size_from', type=int, help="Minimum file size in bytes")
+file_catalog_filter_parser.add_argument('size_to', type=int, help="Maximum file size in bytes")
+file_catalog_filter_parser.add_argument('sort', type=str, default="id,asc", help="Sort format: field,asc|desc")
+file_catalog_filter_parser.add_argument('page', type=int, default=1, help="Page number")
+file_catalog_filter_parser.add_argument('perPage', type=int, default=10, help="Results per page")

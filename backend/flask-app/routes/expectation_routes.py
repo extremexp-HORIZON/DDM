@@ -1,17 +1,22 @@
-from flask import request, jsonify
+from flask import request
 from flask_restx import Namespace, Resource, fields
 from celery import chain
 from tasks.task import build_expectations_task, build_column_descriptions_task
-from utils.expectation_helpers import get_expectation_details, categorize_expectations
 from utils.zenoh_file_handler import ZenohFileHandler
-from models.expectations import ExpectationSuites, ExpectationSuites, ExpectationResults
+from models.expectations import ExpectationSuites
 from utils.file_handler import save_file_record
 from utils.expectations_handler import save_expectation_suite
 from datetime import datetime, timezone
 import mimetypes
 import os
 from tasks.task import run_expectation_suites_task
-from extensions.db import db
+from parsers.expectations_parser import expectation_suite_filter_parser 
+from dateutil.parser import isoparse
+from sqlalchemy import or_
+
+
+def split_values(value):
+    return [v.strip() for v in value.split(',')] if value else []
 
 expectations_ns = Namespace('expectations', description='Operations related to expectations')
 
@@ -34,7 +39,6 @@ expectation_model = expectations_ns.model('Expectation', {
 # Swagger models
 e_suite_model = expectations_ns.model('ExpectationSuite', {
     'suite_name': fields.String(required=True),
-    'datasource_name': fields.String(required=True),
     'file_types': fields.List(fields.String, required=True, description="Allowed file types"),
     'expectations': fields.Raw(required=True),
     'category': fields.String(),
@@ -43,25 +47,6 @@ e_suite_model = expectations_ns.model('ExpectationSuite', {
     'use_case': fields.String(),
 })
 
-result_model = expectations_ns.model('ExpectationResult', {
-    'user_id': fields.String(required=True),
-    'suite_id': fields.String(required=True),
-    'dataset_name': fields.String(required=True),
-    'result_summary': fields.Raw(),
-    'detailed_results': fields.Raw(),
-    'path': fields.String(description="Results file path")
-})
-
-
-validate_files_against_suite_model = expectations_ns.model('ValidateFilesAgainstSuite', {
-    'suite_id': fields.String(required=True, description="Expectation suite ID"),
-    'file_ids': fields.List(fields.String, required=True, description="List of file IDs to validate")
-})
-
-validate_file_against_suites_model = expectations_ns.model('ValidateFileAgainstSuites', {
-    'file_id': fields.String(required=True, description="ID of the file to validate"),
-    'suite_ids': fields.List(fields.String, required=True, description="List of suite IDs to validate against")
-})
 
 
 # 📌 Utility: Detect File Type
@@ -137,34 +122,76 @@ class UploadSample(Resource):
         finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
-
-
                 
 
-@expectations_ns.route('/categorized-expectations')
-@expectations_ns.doc(security='apikey')
-class CategorizedExpectations(Resource):
-    def get(self):
-        """Returns all available Great Expectations validation rules categorized by data quality issues."""
-        categorized = categorize_expectations()
-        return jsonify(categorized)
-
-@expectations_ns.route('/all-expectations')
-@expectations_ns.doc(security='apikey')
-class AllExpectations(Resource):
-    def get(self):
-        """Returns a list of all available Great Expectations validation rules with descriptions and arguments."""
-        expectations = get_expectation_details()
-        return jsonify({"all_expectations": expectations})
 
 
 @expectations_ns.route('/suites')
 @expectations_ns.doc(security='apikey')
 class ExpectationSuiteList(Resource):
+    @expectations_ns.expect(expectation_suite_filter_parser)
     def get(self):
-        """List all expectation suites"""
-        suites = ExpectationSuites.query.all()
-        return jsonify([suite.to_json() for suite in suites])
+        """List all expectation suites with filters"""
+        args = expectation_suite_filter_parser.parse_args()
+
+        suite_names = args['suite_name']
+        file_types = args['file_types']
+        categories = args['category']
+        use_cases = args['use_case']
+        user_ids = args['user_id']
+        created_from = args['created_from']
+        created_to = args['created_to']
+        sort = args['sort']
+        page = args['page']
+        per_page = args['perPage']
+        suite_ids = args.get('suite_id') or []
+
+
+        query = ExpectationSuites.query
+
+        if suite_names:
+            query = query.filter(or_(*[ExpectationSuites.suite_name.ilike(f"%{v}%") for v in suite_names]))
+        if file_types:
+            query = query.filter(or_(*[ExpectationSuites.file_types.contains([ft]) for ft in file_types]))
+        if categories:
+            query = query.filter(or_(*[ExpectationSuites.category.ilike(f"%{v}%") for v in categories]))
+        if use_cases:
+            query = query.filter(or_(*[ExpectationSuites.use_case.ilike(f"%{v}%") for v in use_cases]))
+        if user_ids:
+            query = query.filter(or_(*[ExpectationSuites.user_id.ilike(f"%{v}%") for v in user_ids]))
+        if suite_ids:
+            query = query.filter(ExpectationSuites.suite_id.in_(suite_ids))
+
+        if created_from:
+            try:
+                query = query.filter(ExpectationSuites.created >= isoparse(created_from))
+            except Exception:
+                return {"message": "Invalid 'created_from' format"}, 400
+        if created_to:
+            try:
+                query = query.filter(ExpectationSuites.created <= isoparse(created_to))
+            except Exception:
+                return {"message": "Invalid 'created_to' format"}, 400
+
+        # Sorting
+        sort_field, sort_dir = sort.split(',')
+        if hasattr(ExpectationSuites, sort_field):
+            column = getattr(ExpectationSuites, sort_field)
+            query = query.order_by(column.desc() if sort_dir == "desc" else column.asc())
+
+        filtered_total = query.count()
+        suites = query.offset((page - 1) * per_page).limit(per_page).all()
+        total = ExpectationSuites.query.count()
+
+        return {
+            "data": [s.to_json() for s in suites],
+            "total": total,
+            "filtered_total": filtered_total,
+            "page": page,
+            "perPage": per_page,
+        }
+
+
 
     @expectations_ns.expect(e_suite_model)
     @expectations_ns.doc(security='apikey')
@@ -180,7 +207,7 @@ class ExpectationSuiteList(Resource):
 
         project_id = data.get("suite_name") or "default"
 
-        task = run_expectation_suites_task.delay(file_record.id, project_id, [suite.id])
+        task = run_expectation_suites_task.delay(file_record.id, [suite.id])
 
         return {
             "message": "Suite created and validation task started.",
@@ -195,95 +222,6 @@ class ExpectationSuiteDetail(Resource):
     def get(self, suite_id):
         """Get details of an expectation suite"""
         suite = ExpectationSuites.query.get_or_404(suite_id)
-        return suite.to_json()
+        return suite.to_json()   
 
 
-@expectations_ns.route('/suite-tuples')
-@expectations_ns.doc(security='apikey')
-class SuiteTuples(Resource):
-    def get(self):
-        """Get tuples of (id, name, use_case) for dropdowns"""
-        data = ExpectationSuites.get_all_tuples()
-        return jsonify(data)
-
-
-@expectations_ns.route('/results')
-@expectations_ns.doc(security='apikey')
-class ExpectationResultsList(Resource):
-    @expectations_ns.expect(result_model)
-    @expectations_ns.doc(security='apikey')
-    def post(self):
-        """Save the result of an expectation suite test on a dataset"""
-        data = request.json
-        result = ExpectationResults(**data)
-        db.session.add(result)
-        db.session.commit()
-        return {'message': 'Result saved', 'id': result.id}, 201
-
-    def get(self):
-        """Get all expectation results (summary only)"""
-        results = ExpectationResults.query.all()
-        return jsonify([result.to_json() for result in results])
-
-
-@expectations_ns.route('/results/<string:result_id>')
-class ExpectationResultDetail(Resource):
-    @expectations_ns.doc(security='apikey')
-    def get(self, result_id):
-        """Get a detailed result entry"""
-        result = ExpectationResults.query.get_or_404(result_id)
-        return result.to_json()
-
-
-
-@expectations_ns.route('/validate/files-against-suite')
-class ValidateFilesAgainstSuite(Resource):
-    @expectations_ns.expect(validate_files_against_suite_model)
-    @expectations_ns.doc(security='apikey')
-    @expectations_ns.response(202, 'Validation tasks started')
-    @expectations_ns.doc(description="Validate multiple files against a single expectation suite.")
-    def post(self):
-        """Validate multiple files against a single expectation suite."""
-        data = request.json
-        suite_id = data.get("suite_id")
-        file_ids = data.get("file_ids", [])
-
-        if not suite_id or not file_ids:
-            return {"error": "Both suite_id and file_ids are required."}, 400
-
-        tasks = []
-        for file_id in file_ids:
-            task = run_expectation_suites_task.delay(file_id, [suite_id])
-            tasks.append({
-                "file_id": file_id,
-                "task_id": task.id
-            })
-
-        return {
-            "message": f"Started validation for {len(file_ids)} file(s) against suite {suite_id}.",
-            "tasks": tasks
-        }, 202
-
-
-
-@expectations_ns.route('/validate/file-against-suites')
-class ValidateFileAgainstSuites(Resource):
-    @expectations_ns.expect(validate_file_against_suites_model)
-    @expectations_ns.doc(security='apikey')
-    @expectations_ns.response(202, 'Validation task started')
-    @expectations_ns.doc(description="Validate a single file against multiple expectation suites.")
-    def post(self):
-        """Validate a single file against multiple expectation suites."""
-        data = request.json
-        file_id = data.get("file_id")
-        suite_ids = data.get("suite_ids", [])
-
-        if not file_id or not suite_ids:
-            return {"error": "Both file_id and suite_ids are required."}, 400
-
-        task = run_expectation_suites_task.delay(file_id, suite_ids)
-
-        return {
-            "message": f"Started validation for file {file_id} against {len(suite_ids)} suite(s).",
-            "task_id": task.id
-        }, 202
