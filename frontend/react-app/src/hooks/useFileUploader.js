@@ -38,14 +38,26 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
     const handleFieldChange = (fileId, field, value) => {
         const prevValue = metadataStore[fileId]?.[field];
         if (prevValue === value) return;
+    
         setTempValues((prev) => ({ ...prev, [`${fileId}-${field}`]: value }));
         setMetadataStore((prev) => ({
             ...prev,
             [fileId]: { ...prev[fileId], [field]: value },
         }));
-        if (!fileId.startsWith("temp-")) updateField(fileId, field, value);
-        else showMessage(toast, "success", `Updated ${field} to: ${value}`);
+    
+        if (!fileId.startsWith("temp-")) {
+            updateField(fileId, field, value).then(() => {
+                setFiles((prev) =>
+                    prev.map((file) =>
+                        file.id === fileId ? { ...file, [field]: value } : file
+                    )
+                );
+            });
+        } else {
+            showMessage(toast, "success", `Updated ${field} to: ${value}`);
+        }
     };
+    
 
     const handleFieldSubmit = (fileId, field) => {
         const newValue = tempValues[`${fileId}-${field}`];
@@ -72,6 +84,7 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
             id: `temp-${Date.now()}-${index}`,
             file,
             progress: 0,
+            collapsed: true,
             statuses: [{ step: "Added", status: "🟡 Waiting for Upload" }],
         }));
         if (fileUploadRef.current) fileUploadRef.current.clear();
@@ -190,6 +203,7 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
                 description: localMeta.description || "",
                 use_case: localMeta.useCases || [],
                 metadata: localMeta.metadata || {},
+                collapsed: true, 
                 statuses: [
                     { step: "Upload Complete", status: "✅ Upload Complete" },
                     { step: "Processing Metadata", status: "⏳ Processing..." },

@@ -13,14 +13,13 @@ import ExpectationSuites from "./pages/ExpectationSuites";
 import SetPolicies from "./pages/SetPolicies";
 import SetExpectations from "./pages/SetExpectations";
 import ValidationsResults from "./pages/ValidationsResults"; 
-import ValidationViewerPage from './pages/ValidationViewerPage';
+import ValidationViewerPage from "./pages/ValidationViewerPage";
+import ReportViewerPage from "./pages/ReportViewerPage";
 import ExperimentCards from "./pages/ExperimentCards";
 import Parametrics from "./pages/Parametrics";
 import "./styles/layout.css";
 import "./styles/global.css";
 import "primeicons/primeicons.css";
-
-
 
 
 function App() {
@@ -41,6 +40,7 @@ function App() {
                 <Route path="/set-expectations" element={<SetExpectations />} />
                 <Route path="/validation-results" element={<ValidationsResults/>} />
                 <Route path="/validation_results_viewer/:suiteId/:datasetId" element={<ValidationViewerPage />} />
+                <Route path="/report_viewer/:fileId" element={<ReportViewerPage />} />
                 <Route path="/experiment-cards" element={<ExperimentCards />} />
                 <Route path="/parametrics" element={<Parametrics />} />
               </Routes>

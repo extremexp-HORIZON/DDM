@@ -37,7 +37,7 @@ def generate_profile_report(df, file_id, project_id):
 
     ZenohFileHandler.put_file(
         report_path,
-        json.dumps(profile_html).encode("utf-8")  # ensure it's bytes
+        profile_html.encode("utf-8")
     )
 
     logger.info(f"✅ Profile report stored in Zenoh at {report_path}")

@@ -1,4 +1,4 @@
-from flask import request,send_file
+from flask import request, send_file, Response
 from flask_restx import Resource, Namespace, fields
 from utils.zenoh_file_handler import ZenohFileHandler
 from utils.file_handler import get_file_record, get_file_records_by_ids
@@ -188,13 +188,8 @@ class SingleFileReportResource(Resource):
             if file_content is None:
                 return {'message': 'Report not found in Zenoh'}, 404
 
-            # Return as an HTML response (not a file download)
-            return send_file(
-                file_content,
-                mimetype='text/html',
-                download_name=f"{file.upload_filename}_profile_report.html",
-                as_attachment=False  # 👈 Serve inline
-            )
+            # ✅ Return as raw HTML string response
+            return Response(file_content, mimetype='text/html')
 
         except Exception as e:
             logger.error(f"❌ Error retrieving HTML report: {str(e)}")

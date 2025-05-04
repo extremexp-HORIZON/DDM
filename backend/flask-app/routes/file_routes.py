@@ -196,7 +196,8 @@ class FileResource(Resource):
                 file_size=data.get("file_size", file.file_size),
                 file_hash=data.get("file_hash", file.file_hash),
                 uploader_metadata=data.get("uploader_metadata", file.uploader_metadata),
-                filename=secure_filename(data["upload_filename"]) if "upload_filename" in data else file.filename
+                filename=secure_filename(data["upload_filename"]) if "upload_filename" in data else file.filename,
+                description=data.get("description", file.description)
             )
 
             return {

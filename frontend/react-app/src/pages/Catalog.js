@@ -229,6 +229,15 @@ const Catalog = () => {
                 tooltipOptions={{ position: "top" }}
               />
               <Button
+                icon="pi pi-external-link"
+                className="p-button-sm p-button-secondary p-button-text"
+                tooltip="View Report"
+                tooltipOptions={{ position: "top" }}
+                onClick={() => {
+                  window.open(`/report_viewer/${rowData.id}`, '_blank');
+                }}
+              />
+              <Button
                 icon="pi pi-play"
                 className="p-button-sm p-button-success p-button-text"
                 onClick={() => {
