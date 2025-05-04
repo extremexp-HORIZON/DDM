@@ -56,8 +56,7 @@ const ValidationResults = () => {
         lazyParams,
         setLazyParams,
         loading,
-        totalRecords,
-        reload
+        totalRecords
     } = useValidationResults(filters, toast);
   
       

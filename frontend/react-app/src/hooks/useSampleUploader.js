@@ -50,7 +50,7 @@ export const useSampleUploader = ({
 
         initialExpectations[column] = {};
 
-        for (const [category, rules] of Object.entries(categories)) {
+        for (const [rules] of Object.entries(categories)) {
           for (const rule of rules) {
             initialExpectations[column][rule.expectation_type] = {
               ...(rule.kwargs || {}),
@@ -67,7 +67,6 @@ export const useSampleUploader = ({
       for (const rules of Object.values(tableData)) {
         for (const rule of rules) {
           const args = rule.kwargs || {};
-          const hasValues = Object.values(args).some(v => v !== null && v !== "");
 
           initialTableExpectations[rule.expectation_type] = {
             ...args,

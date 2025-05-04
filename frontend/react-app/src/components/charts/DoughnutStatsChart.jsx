@@ -4,11 +4,12 @@ import { Chart } from 'primereact/chart';
 const DoughnutStatsChart = ({ passed = 0, failed = 0 }) => {
   const [chartData, setChartData] = useState({});
   const [chartOptions, setChartOptions] = useState({});
-  const total = passed + failed;
-  const successRate = total > 0 ? ((passed / total) * 100).toFixed(3) : "0";
+
 
   useEffect(() => {
     const documentStyle = getComputedStyle(document.documentElement);
+    const total = passed + failed;
+    const successRate = total > 0 ? ((passed / total) * 100).toFixed(3) : "0";
 
     const data = {
       labels: [`Passed: ${passed}`, `Failed: ${failed}`],

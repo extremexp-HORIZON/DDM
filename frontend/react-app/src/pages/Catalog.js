@@ -49,6 +49,10 @@ const Catalog = () => {
   const [validateDialogVisible, setValidateDialogVisible] = useState(false);
   const [selectedFileId, setSelectedFileId] = useState(null);
 
+  const [showAllDialogVisible, setShowAllDialogVisible] = useState(false);
+  const [showAllDialogContent, setShowAllDialogContent] = useState('');
+
+
   const handleValidateAgainstSuites = async (fileId, suiteIds) => {
     try {
       const payload = {
@@ -59,7 +63,7 @@ const Catalog = () => {
       showMessage(toast, "success", "Validation started.");
     } catch (error) {
       console.error(error);
-      showMessage(toast, "error", "Failed to start validation.");
+      showMessage(toast, "error", error.message || "Failed to start validation.");
     }
   };
   
@@ -315,15 +319,26 @@ const Catalog = () => {
               tooltip="View Details"
               tooltipOptions={{ position: "top" }}
               onClick={() => {
-                const newTab = window.open("/validationviewer", "_blank");
-                newTab.onload = () => {
-                  newTab.postMessage(row, window.location.origin);
-                };
+                window.open(`/validation_results_viewer/${row.suite_id}/${row.dataset_id}`, '_blank');
               }}
             />
           )} />
         </DataTable>
       </Dialog>
+
+
+      <Dialog
+        header="Selected File Details"
+        visible={showAllDialogVisible}
+        onHide={() => setShowAllDialogVisible(false)}
+        style={{ width: '50vw' }}
+        modal
+      >
+        <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+          {showAllDialogContent}
+        </pre>
+      </Dialog>
+
 
 
       {selectedRows?.length > 0 && (
@@ -355,11 +370,13 @@ const Catalog = () => {
           className="p-button-info"
           onClick={() => {
             const info = selectedRows
-              .map((row) => `ID: ${row.id}, Path: ${row.zenoh_file_path || row.path || "Unknown"}`)
-              .join("\n");
-            alert(info);
+              .map((row) => `ID: ${row.id}\nPath: ${row.zenoh_file_path || row.path || "Unknown"}`)
+              .join("\n\n");
+            setShowAllDialogContent(info);
+            setShowAllDialogVisible(true);
           }}
         />
+
       </div>
     )}
 

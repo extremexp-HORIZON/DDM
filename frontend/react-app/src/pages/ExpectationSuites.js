@@ -8,7 +8,7 @@ import { Tooltip } from "primereact/tooltip";
 import ExpectationSuiteFilters from "../components/ExpectationSuiteFilters";
 import { formatDate } from '../utils/dateFormatter';
 import { useSupportedFileTypes } from '../hooks/useSupportedFileTypes';
-import { categoryOptions, itemTemplate } from '../utils/categoryOptions';
+import { itemTemplate } from '../utils/categoryOptions';
 import { Button } from "primereact/button"; 
 import { getFileIconFromExt } from "../utils/icons";
 import ExpecationSuiteViewerDialog from "../components/ExpectationSuiteViewerDialog";
@@ -76,7 +76,6 @@ const ExpectationSuites = () => {
     setLazyParams,
     loading,
     totalRecords,
-    reload,
   } = useExpectationSuites(filters, toast);
 
 

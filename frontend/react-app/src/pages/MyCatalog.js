@@ -15,17 +15,20 @@ import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
-import { Button } from "primereact/button"; // For Expand/Collapse All buttons
+import { Button } from "primereact/button"; 
+import { Dialog } from "primereact/dialog";
 
 const MyCatalog = () => {
-  const { isDarkMode } = useTheme(); // Get dark mode from context
+  const { isDarkMode } = useTheme(); 
+
+
+  const [showAllDialogVisible, setShowAllDialogVisible] = useState(false);
+  const [showAllDialogContent, setShowAllDialogContent] = useState('');
 
   const toast = useToast();
 
   const { 
-    fileTypes, 
-    loading: fileTypesLoading, 
-    error: fileTypesError 
+    fileTypes
   } = useAllFileTypes();
 
   const [filters, setFilters] = useState({
@@ -190,6 +193,18 @@ const MyCatalog = () => {
 
       </DataTable>
 
+      <Dialog
+        header="Selected File Details"
+        visible={showAllDialogVisible}
+        onHide={() => setShowAllDialogVisible(false)}
+        style={{ width: '50vw' }}
+        modal
+      >
+        <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+          {showAllDialogContent}
+        </pre>
+      </Dialog>
+
       {selectedRows?.length > 0 && (
           <div
             style={{
@@ -211,17 +226,17 @@ const MyCatalog = () => {
                   handleDownloadMultiple(selectedRows.map((row) => row.id));
                 }
               }}
-            />
-    
+            />           
             <Button
               label={`Show ${selectedRows.length} File${selectedRows.length > 1 ? "s" : ""}`}
               icon="pi pi-info-circle"
               className="p-button-info"
               onClick={() => {
                 const info = selectedRows
-                  .map((row) => `ID: ${row.id}, Path: ${row.zenoh_file_path || row.path || "Unknown"}`)
-                  .join("\n");
-                alert(info);
+                  .map((row) => `ID: ${row.id}\nPath: ${row.zenoh_file_path || row.path || "Unknown"}`)
+                  .join("\n\n");
+                setShowAllDialogContent(info);
+                setShowAllDialogVisible(true);
               }}
             />
           </div>

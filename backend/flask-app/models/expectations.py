@@ -92,6 +92,7 @@ class ValidationResults(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "suite_id": self.suite_id,
+            "suite_name": self.suite.suite_name if self.suite else None,
             "dataset_name": self.dataset_name,
             "dataset_id": self.dataset_id,
             "result_summary": self.result_summary,

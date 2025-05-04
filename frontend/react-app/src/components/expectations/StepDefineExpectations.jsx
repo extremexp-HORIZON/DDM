@@ -29,7 +29,7 @@ const StepDefineExpectations = ({
   const renderArgumentInput = (value, onChange, keyPath = []) => {
     const isList = Array.isArray(value);
     const isSimpleList = isList && value.every(v => typeof v !== "object");
-    const chipsFields = ["value_set", "column_list", "type_list"];
+    const chipsFields = ["value_set", "column_list", "type_list", "value_pairs_set", "like_pattern_list", "regex_list" ];
     const lastKey = keyPath[keyPath.length - 1];
     const shouldUseChips = chipsFields.includes(lastKey) || isSimpleList;
 
@@ -130,8 +130,8 @@ const StepDefineExpectations = ({
                       <div key={arg.name} style={{ display: "flex", flexDirection: "column", minWidth: "150px" }}>
                         <label style={{ fontWeight: 500 }}>{arg.name.replace(/_/g, " ")}</label>
                         {renderArgumentInput(value, (newValue, keyPath) =>
-                          handleArgChange(column, rule.name, newValue, [arg.name, ...keyPath])
-                        )}
+                          handleArgChange(column, rule.name, newValue, [...keyPath])
+                        , [arg.name])}
                       </div>
                     );
                   })}

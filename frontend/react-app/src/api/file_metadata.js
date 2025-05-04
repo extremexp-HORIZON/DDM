@@ -1,7 +1,5 @@
 // src/api/fileMetadata.js
 import axios from "axios";
-import { useToast } from "../context/ToastContext";
-import { showMessage } from "../utils/messages";
 import { BASE_URL } from "./base";
 
 export const FILE_METADATA_API = {

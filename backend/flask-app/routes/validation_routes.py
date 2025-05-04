@@ -15,6 +15,7 @@ validations_ns = Namespace('validations', description='Operations related to val
 result_model = validations_ns.model('ValidationResult', {
     'user_id': fields.String(required=True),
     'suite_id': fields.String(required=True),
+    'suite_name': fields.String(required=False),
     'dataset_name': fields.String(required=True),
     'result_summary': fields.Raw(),
     'detailed_results': fields.Raw(),

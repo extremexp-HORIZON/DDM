@@ -5,23 +5,28 @@ import "../../styles/components/stepper.css"
 import { useExpectationSuite } from "../../hooks/useExpectationSuite";
 import ExpectationSuiteViewer from "../../components/ExpectationSuiteViewer";
 
+
 const StepFinalize = ({ saveExpectations }) => {
+
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [fetchedSuite, setFetchedSuite] = useState(null);
-
-
-  const { suite, fetchSuite, loading: loadingSuite } = useExpectationSuite();
+  const { suite, fetchSuite } = useExpectationSuite();
 
   const handleSave = async () => {
-    const response = await saveExpectations();
-    if (response.success) {
-      setSubmitted(true);
-      await fetchSuite(response.suite_id);
+    setLoading(true);  
+    try {
+      const response = await saveExpectations();
+      if (response.success) {
+        setSubmitted(true);
+        await fetchSuite(response.suite_id);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false); 
     }
   };
-  
- 
+   
 
   return (
     <div>
