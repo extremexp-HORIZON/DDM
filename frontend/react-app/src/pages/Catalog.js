@@ -68,7 +68,6 @@ const Catalog = () => {
   };
   
 
-
   const { 
     fileTypes,
   } = useAllFileTypes();
@@ -253,8 +252,8 @@ const Catalog = () => {
                 className="p-button-sm p-button-warning p-button-text" 
                 onClick={async () => {
                   try {
-                    await fetchValidationResults([rowData.id]);
-                    setCurrentDatasetName(rowData.filename || "Unknown Dataset");
+                    await fetchValidationResults(rowData.id);
+                    setCurrentDatasetName(rowData.id || "Unknown Dataset");
                     setValidationDialogVisible(true);
                   } catch (error) {
                     console.error(error);
@@ -311,29 +310,7 @@ const Catalog = () => {
         jsonData={jsonDialogData}
       />
 
-      <Dialog
-        header={`Validation Results for ${currentDatasetName}`}
-        visible={validationDialogVisible}
-        onHide={() => setValidationDialogVisible(false)}
-        style={{ width: '60vw' }}
-        modal
-      >
-        <DataTable value={validationResults} >
-          <Column field="run_time" header="Run Time" body={(row) => new Date(row.run_time).toLocaleString()} />
-          <Column field="suite_name" header="Suite Name" />
-          <Column header="Actions" body={(row) => (
-            <Button
-              icon="pi pi-eye"
-              className="p-button-sm p-button-info"
-              tooltip="View Details"
-              tooltipOptions={{ position: "top" }}
-              onClick={() => {
-                window.open(`/validation_results_viewer/${row.suite_id}/${row.dataset_id}`, '_blank');
-              }}
-            />
-          )} />
-        </DataTable>
-      </Dialog>
+
 
 
       <Dialog

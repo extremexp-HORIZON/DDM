@@ -10,7 +10,7 @@ export const useValidationResultsByDataset = (toast) => {
   const fetchValidationResults = async (datasetId) => {
     setLoading(true);
     try {
-      const res = await VALIDATIONS_API.getAllResults({ dataset_id: [datasetId] });
+      const res = await VALIDATIONS_API.getAllResults({ dataset_id: datasetId });
       const results = Array.isArray(res.data?.data) ? res.data.data : [];
       setValidationResults(results);
       return results;  // optional if you want to do something extra immediately

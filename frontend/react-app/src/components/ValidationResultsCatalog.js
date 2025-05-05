@@ -11,29 +11,20 @@ const ValidationResultsCatalog = ({
   results,
   datasetName,
 }) => {
-  const openInViewer = (result) => {
-    const newTab = window.open("/validationviewer", "_blank");
-    const sendMessage = () => {
-      newTab.postMessage(result, window.location.origin);
-    };
-
-    // Post message safely after tab is ready
-    if (newTab) {
-      newTab.onload = sendMessage;
-    } else {
-      setTimeout(sendMessage, 1000); // fallback if newTab not ready immediately
-    }
+  const openInViewer = (row) => {
+    window.open(`/validation_results_viewer/${row.suite_id}/${row.dataset_id}`, '_blank');
   };
+  
 
   return (
     <Dialog
-      header={`Validation Results for ${datasetName}`}
+      header={`Validation Results for file: ${datasetName}`}
       visible={visible}
       onHide={onHide}
       style={{ width: '60vw' }}
       modal
     >
-      <DataTable value={results} responsiveLayout="scroll" size="small">
+      <DataTable value={results} size="small">
         <Column 
           field="run_time" 
           header="Run Time" 

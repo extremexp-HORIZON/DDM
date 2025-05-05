@@ -49,17 +49,36 @@ class ValidationResultsList(Resource):
         db.session.commit()
         return {'message': 'Result saved', 'id': result.id}, 201
 
-    
     @validations_ns.doc(security='apikey')
     @validations_ns.expect(validation_results_filter_parser)
     def get(self):
         """Get all validation results with filters"""
         args = validation_results_filter_parser.parse_args()
 
-        dataset_names = args.get('dataset_name') or []
-        dataset_ids = args.get('dataset_id') or []
-        user_ids = args.get('user_id') or []
-        suite_ids = args.get('suite_id') or []
+        dataset_names = args.get('dataset_name')
+        if dataset_names and not isinstance(dataset_names, list):
+            dataset_names = [dataset_names]
+        else:
+            dataset_names = dataset_names or []
+
+        dataset_ids = args.get('dataset_id')
+        if dataset_ids and not isinstance(dataset_ids, list):
+            dataset_ids = [dataset_ids]
+        else:
+            dataset_ids = dataset_ids or []
+
+        user_ids = args.get('user_id')
+        if user_ids and not isinstance(user_ids, list):
+            user_ids = [user_ids]
+        else:
+            user_ids = user_ids or []
+
+        suite_ids = args.get('suite_id')
+        if suite_ids and not isinstance(suite_ids, list):
+            suite_ids = [suite_ids]
+        else:
+            suite_ids = suite_ids or []
+
         run_from = args.get('run_time_from')
         run_to = args.get('run_time_to')
         sort = args.get('sort', 'run_time,desc')
@@ -107,6 +126,7 @@ class ValidationResultsList(Resource):
             "page": page,
             "perPage": per_page,
         }
+
 
 
 
