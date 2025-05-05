@@ -47,7 +47,10 @@ sudo docker compose up -d
 
 ## 📸 Screenshots
 
-### Catalog
+## 📸 Screenshots
+
+<details>
+<summary><strong>Catalog</strong></summary>
 
 ![Catalog Filter](demo_screenshots/catalog_filter.png)  
 ![Uploader Metadata](demo_screenshots/catalog_uploader_metadata.png)  
@@ -55,7 +58,10 @@ sudo docker compose up -d
 ![Validation Results](demo_screenshots/catalog_validation_results.png)  
 ![View File Metadata](demo_screenshots/catalog_view_file_metadata.png)
 
-### Uploads
+</details>
+
+<details>
+<summary><strong>Uploads</strong></summary>
 
 ![Uploaded Files](demo_screenshots/uploaded_files.png)  
 ![Uploaded Files Metadata](demo_screenshots/uploaded_files_metadata.png)  
@@ -65,7 +71,10 @@ sudo docker compose up -d
 ![Upload Files Metadata](demo_screenshots/upload_files_metadata.png)  
 ![Upload Links](demo_screenshots/upload_links.png)
 
-### Expectations
+</details>
+
+<details>
+<summary><strong>Expectations</strong></summary>
 
 ![Expectation Suites](demo_screenshots/expectation_suites.png)  
 ![Expectation Suites View](demo_screenshots/expectation_suites_view.png)  
@@ -75,11 +84,19 @@ sudo docker compose up -d
 ![Set Expectations 3b](demo_screenshots/set_expectations_3b.png)  
 ![Set Expectations 4](demo_screenshots/set_expectations_4.png)
 
-### Validations
+</details>
+
+<details>
+<summary><strong>Validations</strong></summary>
 
 ![Validation Results](demo_screenshots/validation_results.png)  
 ![Validation Results View](demo_screenshots/validation_results_view.png)
 
-### Swagger Documentation
+</details>
+
+<details>
+<summary><strong>Swagger Documentation</strong></summary>
 
 ![Swagger Docs](demo_screenshots/z_swagger_z.png)
+
+</details>
