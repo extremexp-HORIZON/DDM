@@ -96,5 +96,7 @@ sudo docker compose up -d
 <summary><strong>Swagger Documentation</strong></summary>
 
 ![Swagger Docs](demo_screenshots/z_swagger_z.png)
+![Swagger Docs+](demo_screenshots/z_swagger_zz.png)
+
 
 </details>
