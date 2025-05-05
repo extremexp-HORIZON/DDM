@@ -47,8 +47,6 @@ sudo docker compose up -d
 
 ## 📸 Screenshots
 
-## 📸 Screenshots
-
 <details>
 <summary><strong>Catalog</strong></summary>
 
