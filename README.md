@@ -46,3 +46,40 @@ sudo docker compose up -d
 
 
 ## 📸 Screenshots
+
+### Catalog
+
+![Catalog Filter](demo_screenshots/catalog_filter.png)  
+![Uploader Metadata](demo_screenshots/catalog_uploader_metadata.png)  
+![Validate](demo_screenshots/catalog_validate.png)  
+![Validation Results](demo_screenshots/catalog_validation_results.png)  
+![View File Metadata](demo_screenshots/catalog_view_file_metadata.png)
+
+### Uploads
+
+![Uploaded Files](demo_screenshots/uploaded_files.png)  
+![Uploaded Files Metadata](demo_screenshots/uploaded_files_metadata.png)  
+![Upload Chunks](demo_screenshots/upload_chunks.png)  
+![Upload Chunks Merged](demo_screenshots/upload_chunks_merged.png)  
+![Upload Files](demo_screenshots/upload_files.png)  
+![Upload Files Metadata](demo_screenshots/upload_files_metadata.png)  
+![Upload Links](demo_screenshots/upload_links.png)
+
+### Expectations
+
+![Expectation Suites](demo_screenshots/expectation_suites.png)  
+![Expectation Suites View](demo_screenshots/expectation_suites_view.png)  
+![Set Expectations 1](demo_screenshots/set_expectations_1.png)  
+![Set Expectations 2](demo_screenshots/set_expectations_2.png)  
+![Set Expectations 3a](demo_screenshots/set_expectations_3a.png)  
+![Set Expectations 3b](demo_screenshots/set_expectations_3b.png)  
+![Set Expectations 4](demo_screenshots/set_expectations_4.png)
+
+### Validations
+
+![Validation Results](demo_screenshots/validation_results.png)  
+![Validation Results View](demo_screenshots/validation_results_view.png)
+
+### Swagger Documentation
+
+![Swagger Docs](demo_screenshots/z_swagger_z.png)
