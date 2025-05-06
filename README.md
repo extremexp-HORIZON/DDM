@@ -19,6 +19,7 @@ This project provides a **decentralized data management (DDM)** system designed 
 ### 1️⃣ Backend Environment Configuration
 
 Navigate to: DDM/backend/flask-app/
+
 Copy the provided example environment file:
 
 ```bash
