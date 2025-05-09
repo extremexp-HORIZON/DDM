@@ -9,7 +9,6 @@
       }
     }
   },
-  "queries_default_timeout": 20000,
   "plugins": {
     "storage_manager": {
       "volumes": {

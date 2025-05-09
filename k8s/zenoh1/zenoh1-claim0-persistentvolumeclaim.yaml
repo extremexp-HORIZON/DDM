@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    io.kompose.service: zenoh1-claim0
+  name: zenoh1-claim0
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Mi
+  storageClassName: manual
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  # annotations:
+  #   hostPathProvisionerIdentity: zenohcluster1
+  #   pv.kubernetes.io/provisioned-by: microk8s.io/hostpath
+  # finalizers:
+  # - kubernetes.io/pv-protection
+  name: zenoh1-pv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 200Mi
+  #  claimRef:
+  #    apiVersion: v1
+  #    kind: PersistentVolumeClaim
+  #    name: zenoh1-claim0
+  hostPath:
+    path: /home/gzorro/ExtremeXP/20250550-ddm/DDM/zenoh1
+    # type: Directory
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - zorro-solutions
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  volumeMode: Filesystem

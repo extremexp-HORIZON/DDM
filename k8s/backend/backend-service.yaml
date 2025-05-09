@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./k8s
+    kompose.version: 1.26.1 (a9d05d509)
+  labels:
+    io.kompose.service: backend
+  name: backend
+spec:
+  type: NodePort  # Changed from default to NodePort
+  ports:
+    - name: "5001"
+      port: 5001
+      targetPort: 5001
+      nodePort: 32002
+  selector:
+    io.kompose.service: backend

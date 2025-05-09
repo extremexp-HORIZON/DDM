@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  CELERY_BROKER_URL: sqla+postgresql://postgres:admin@db:5432/mydatabase
+  CELERY_RESULT_BACKEND: db+postgresql://postgres:admin@db:5432/mydatabase
+  DATABASE_URL: postgresql://postgres:admin@db:5432/mydatabase
+  SECRET_KEY: safe_xxp_secret_key
+  OLLAMA_HOST: http://ollama:11434
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: backend-backend-flask-app--env
+  name: backend-flask-app--env

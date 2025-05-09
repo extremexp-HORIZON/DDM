@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -o ./k8s
+    kompose.version: 1.26.1 (a9d05d509)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: celery
+  name: celery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: celery
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -o ./k8s
+        kompose.version: 1.26.1 (a9d05d509)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/app_network: "true"
+        io.kompose.service: celery
+    spec:
+      containers:
+        - args:
+            - celery
+            - -A
+            - make_celery
+            - worker
+            - --concurrency=4
+            - --loglevel=info
+            - -P
+            - eventlet
+          env:
+            - name: CELERY_BROKER_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: CELERY_BROKER_URL
+                  name: backend-flask-app--env
+            - name: CELERY_RESULT_BACKEND
+              valueFrom:
+                configMapKeyRef:
+                  key: CELERY_RESULT_BACKEND
+                  name: backend-flask-app--env
+            - name: DATABASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  key: DATABASE_URL
+                  name: backend-flask-app--env
+            - name: SECRET_KEY
+              valueFrom:
+                configMapKeyRef:
+                  key: SECRET_KEY
+                  name: backend-flask-app--env
+          image: karageorge/ddm-celery:1.89
+          name: celery
+          resources: {}
+          volumeMounts:
+            - mountPath: /app/uploads
+              name: celery-claim0
+      restartPolicy: Always
+      volumes:
+        - name: celery-claim0
+          persistentVolumeClaim:
+            claimName: celery-claim0
+status: {}

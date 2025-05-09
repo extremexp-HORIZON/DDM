@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all
+spec:
+  podSelector: {}  # Applies to all pods in the namespace
+  ingress:
+    - {}  # Allows all incoming traffic
+  egress:
+    - {}  # Allows all outgoing traffic
+  policyTypes:
+    - Ingress
+    - Egress

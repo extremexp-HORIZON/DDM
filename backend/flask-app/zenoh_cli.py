@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 zenoh_config = zenoh.Config()
 zenoh_config.insert_json5("mode", '"client"')
-zenoh_config.insert_json5("connect/endpoints", '["tcp/zenoh16:17447"]')
+zenoh_config.insert_json5("connect/endpoints", '["tcp/zenoh1:7447"]')
 
 # Open Zenoh session
 zenoh_session = zenoh.open(zenoh_config)

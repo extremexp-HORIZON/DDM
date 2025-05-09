@@ -1,0 +1,3 @@
+touch result.csv
+python zenoh_cli.py upload --local "result.csv" --zenoh "projects/1/files/result.csv"
+

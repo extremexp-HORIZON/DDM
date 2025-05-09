@@ -69,7 +69,7 @@ def create_app(config_object="config.Config"):
 
     # Create database tables if they don't exist
     with app.app_context():
-        
+        #db.drop_all()
         db.create_all()
 
         from routes.task_routes import view_tasks_bp

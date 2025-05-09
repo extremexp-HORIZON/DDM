@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: geopap87/ddm-ollama:1.0
+          ports:
+            - containerPort: 11434
+          env:
+            - name: OLLAMA_NUM_PARALLEL
+              value: "4"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "1"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "24h"
+            - name: OLLAMA_MMAP
+              value: "true"
+          volumeMounts:
+            - name: ollama-storage
+              mountPath: /root/.ollama
+#          resources:
+#            limits:
+#              nvidia.com/gpu: 1
+#            requests:
+#              # Request a GPU (NVIDIA example using device plugin)
+#              nvidia.com/gpu: 1
+          readinessProbe:
+            exec:
+              command: ["ollama", "list"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 10
+      volumes:
+        - name: ollama-storage
+          persistentVolumeClaim:
+            claimName: ollama-pvc
