@@ -31,12 +31,12 @@ RUN apt-get update && apt-get install -y nginx
 COPY . /app/
 
 # Copy the Nginx config file into the container
-COPY nginx.conf /etc/nginx/nginx.conf
+# COPY nginx.conf /etc/nginx/nginx.conf
 
 # Expose Flask API port (Flask's default port)
 EXPOSE 5001
 
 
-CMD ["sh", "-c", "nginx && exec gunicorn -k eventlet -w 4 -b 0.0.0.0:5001 --timeout 60 wsgi:app"]
+CMD ["sh", "-c", "exec gunicorn -k eventlet -w 4 -b 0.0.0.0:5001 --timeout 60 wsgi:app"]
 
 

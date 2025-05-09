@@ -6,14 +6,20 @@ export const CATALOG_API = {
   fetchCatalog: async (params = {}) => {
     const response = await axios.get(`${BASE_URL}/catalog`, {
       params,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     });
     return response.data;
   },
   fetchMyCatalog: async (params = {}) => {
     const response = await axios.get(`${BASE_URL}/catalog/my-catalog`, {
       params,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     });
     return response.data;
   }
