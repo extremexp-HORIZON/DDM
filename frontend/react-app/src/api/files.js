@@ -5,7 +5,10 @@ export const FILES_API = {
 
   uploadFiles: async (formData) => {
     const response = await axios.post(`${BASE_URL}/files/upload`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
     });
     return response.data;
   },
@@ -15,6 +18,10 @@ export const FILES_API = {
     try {
       const response = await axios.patch(`${BASE_URL}/file/update/${fileId}`, {
         [field]: value,
+      }, {
+        headers : {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
       });
 
       if (response.status !== 200) {
@@ -42,6 +49,10 @@ export const FILES_API = {
         use_cases: useCases,
         metadata,
       })),
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
     });
 
     if (!response.data.files) {
@@ -55,6 +66,10 @@ export const FILES_API = {
     const response = await fetch(`${BASE_URL}/file/upload/async`, {
       method: "POST",
       body: formData,
+    }, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
     });
   
     if (!response.ok) {
@@ -68,6 +83,9 @@ export const FILES_API = {
   downloadFile: async (fileId) => {
     const response = await axios.get(`${BASE_URL}/file/${fileId}`, {
       responseType: "blob", // ← to handle binary data
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
     });
 
     const blob = new Blob([response.data]);
@@ -87,13 +105,21 @@ export const FILES_API = {
   },
 
   deleteFile: async (fileId) => {
-    const response = await axios.delete(`${BASE_URL}/file/${fileId}/delete`);
+    const response = await axios.delete(`${BASE_URL}/file/${fileId}/delete`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
     return response.data;
   },
 
   deleteMultipleFiles: async (fileIds) => {
     const response = await axios.delete(`${BASE_URL}/files/delete`, {
       data: { file_ids: fileIds },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
     });
 
     if (response.status !== 200) {
@@ -108,7 +134,10 @@ export const FILES_API = {
     const response = await axios.post(
       `${BASE_URL}/files/download`,
       { file_ids: fileIds },
-      { responseType: "blob" } // Important for ZIP
+      { responseType: "blob" ,
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }} // Important for ZIP
     );
 
     const blob = new Blob([response.data], { type: "application/zip" });
