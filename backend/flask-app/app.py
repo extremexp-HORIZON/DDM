@@ -1,7 +1,7 @@
 import eventlet
 eventlet.monkey_patch()
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, Blueprint
 from celery import Celery, Task
 from extensions.db import db
 from extensions.api import api
@@ -35,6 +35,13 @@ def create_app(config_object="config.Config"):
     app = Flask(__name__)
     CORS(app, origins="*")  # Allow Cross-Origin Requests
 
+    blueprint = Blueprint('api', __name__,
+                      static_url_path='/ddm/swaggerui',
+                      url_prefix='/ddm',
+                      root_path='/ddm')
+    app.register_blueprint(blueprint)
+    
+
     # Load configuration
     app.config.from_object(config_object)
     app.config.from_mapping(
@@ -53,17 +60,19 @@ def create_app(config_object="config.Config"):
         version="1.0",
         title="Extreme XP Decentralized Data Management Swagger Documentation",
         description="API for Extreme XP Decentralized Data Management and File Catalog",
+        doc='/ddm',
+        prefix='/ddm',
     )
 
     # Register Namespaces
-    api.add_namespace(file_ns)
-    api.add_namespace(files_ns)
-    api.add_namespace(file_metadata_ns)
-    api.add_namespace(uploader_metadata_ns)
-    api.add_namespace(catalog_ns)
-    api.add_namespace(expectations_ns)
-    api.add_namespace(validations_ns)
-    api.add_namespace(parametrics_ns)
+    api.add_namespace(file_ns, path='/ddm/file')
+    api.add_namespace(files_ns, path='/ddm/files')
+    api.add_namespace(file_metadata_ns, path='/ddm/file_metadata')
+    api.add_namespace(uploader_metadata_ns, path='/ddm/uploader_metadata')
+    api.add_namespace(catalog_ns, path='/ddm/catalog')
+    api.add_namespace(expectations_ns, path='/ddm/expectations')
+    api.add_namespace(validations_ns, path='/ddm/validations')
+    api.add_namespace(parametrics_ns, path='/ddm/parametrics')
 
 
 

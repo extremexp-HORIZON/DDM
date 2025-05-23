@@ -4,10 +4,10 @@ from models.file import File
 from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
 
-catalog_ns = Namespace(name='catalog',description='File catalog operations', path=None)
+catalog_ns = Namespace(name='catalog', description='File catalog operations', path=None)
 
 
-@catalog_ns.route('/')
+@catalog_ns.route('/list')
 class FileCatalogResource(Resource):
     @catalog_ns.expect(file_catalog_filter_parser)
     def get(self):
