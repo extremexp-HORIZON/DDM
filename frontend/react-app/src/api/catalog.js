@@ -4,7 +4,7 @@ import { BASE_URL } from "./base";
 
 export const CATALOG_API = {
   fetchCatalog: async (params = {}) => {
-    const response = await axios.get(`${BASE_URL}/catalog`, {
+    const response = await axios.get(`${BASE_URL}/catalog/list`, {
       params,
       headers: {
         "Content-Type": "application/json",
