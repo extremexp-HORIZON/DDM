@@ -189,10 +189,11 @@ class FileResource(Resource):
             file.use_case = use_case
 
         try:
-            # ✅ Use your helper for everything else
+            # ✅ Use helper for everything else
             update_file_record_in_db(
                 file_id=file_id,
                 path=data.get("path", file.path),
+                project_id=data.get("project_id", file.project_id),
                 file_size=data.get("file_size", file.file_size),
                 file_hash=data.get("file_hash", file.file_hash),
                 uploader_metadata=data.get("uploader_metadata", file.uploader_metadata),
