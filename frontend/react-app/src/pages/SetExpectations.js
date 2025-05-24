@@ -64,7 +64,7 @@ const SetExpectations = () => {
   } = useArgHandlers(updateExpectation, setTableExpectations);
 
   const handleDescriptions = async (descriptionTaskId) => {
-    const result = await pollTaskResult(descriptionTaskId, 2000, 180000);
+    const result = await pollTaskResult(descriptionTaskId, 2000, 600000);
     return result;
   };
 
