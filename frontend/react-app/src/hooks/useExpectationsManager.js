@@ -10,7 +10,7 @@ export const useExpectationsManager = ({ toast, showMessage }) => {
   const [suiteName, setSuiteName] = useState("");
 
   const handleExpectations = async (taskId) => {
-    const result = await pollTaskResult(taskId, 1000, 120000); // ✅ No destructuring
+    const result = await pollTaskResult(taskId, 1000, 600000); 
     console.log("📦 Raw result from pollTaskResult:", result);
   
     const columnExpectations = result.expectations || {};
