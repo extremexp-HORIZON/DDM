@@ -13,11 +13,19 @@ export const getHtmlReportStyles = (isDarkMode) => `
         color: ${isDarkMode ? "#e0e0e0" : "#000000"} !important;
         border-color: ${isDarkMode ? "#444" : "#ccc"} !important;
     }
-    path {
+
+    /* Only affect figure and axes backgrounds */
+    svg g[id^="figure_"] g#patch_1 > path,
+    svg g[id^="figure_"] g[id^="axes_"] g#patch_2 > path {
         fill: ${isDarkMode ? "#212529" : "#ffffff"} !important;
+        background-color: ${isDarkMode ? "#212529" : "#ffffff"} !important;
         color: ${isDarkMode ? "#e0e0e0" : "#000000"} !important;
     }
 
+    svg g[id^="matplotlib.axis_"] g[id^="text_"] *,
+    svg g[id^="matplotlib.axis_"] text {
+        fill: ${isDarkMode ? "#e0e0e0" : "#000000"} !important;
+    }
 
     /* 🔥 Fix striped tables */
     .table-striped tbody tr:nth-of-type(odd),
