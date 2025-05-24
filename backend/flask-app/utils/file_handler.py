@@ -50,7 +50,7 @@ def save_file_record(file_data):
         raise  # or return None / False if you'd rather handle it that way
 
 
-def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metadata=None, filename=None, description=None):
+def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metadata=None, filename=None, description=None, project_id=None):
     """Update file record with storage info."""
     try:
         file_record = File.query.get(file_id)
@@ -66,6 +66,8 @@ def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metad
             file_record.filename=filename
         if description is not None:
             file_record.description = description
+        if project_id is not None:
+            file_record.project_id = project_id
 
         db.session.commit()
         return True
