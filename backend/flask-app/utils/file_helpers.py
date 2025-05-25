@@ -63,10 +63,10 @@ def delete_file_record(file):
 
 
 def delete_files_by_ids(file_ids):
-    files=get_file_records_by_ids(file_ids)
+    files, error = get_file_records_by_ids(file_ids)
 
-    if not files or len(files) < len(file_ids):
-        return None, "One or more files not found."
+    if error:
+        return None, error
 
     deleted_count = 0
 
@@ -104,6 +104,7 @@ def delete_files_by_ids(file_ids):
         db.session.rollback()
         logger.error(f"❌ DB commit failed during delete: {str(e)}")
         return None, f"Database error: {str(e)}"
+
     
 
 def delete_uploader_metadata_from_zenoh(file):
