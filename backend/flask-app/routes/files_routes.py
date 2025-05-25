@@ -66,12 +66,12 @@ class MultipleFileUploadResource(Resource):
 
         # ✅ Process each file
         for i, file in enumerate(files):
-            filename = secure_filename(file.filename)
-            file_parts = filename.rsplit('.', 1)
+            original_filename = secure_filename(file.filename)
+            file_parts = original_filename.rsplit('.', 1)
             file_extension = file_parts[1] if len(file_parts) > 1 else ''
 
-            # Use user-provided filename if available
-            upload_filename = user_filenames[i] if i < len(user_filenames) and user_filenames[i] else file_parts[0]
+            filename = user_filenames[i] if i < len(user_filenames) and user_filenames[i] else file_parts[0]
+            upload_filename = original_filename
             description = descriptions[i] if i < len(descriptions) and descriptions[i] else ""
 
             # Convert JSON strings to lists if provided
@@ -83,7 +83,7 @@ class MultipleFileUploadResource(Resource):
             # ✅ Create a new file record in DB
             try:
                 file_data = {
-                    "filename": "",
+                    "filename": filename if filename else upload_filename,
                     "upload_filename": upload_filename,
                     "description": description,
                     "path": "",
@@ -299,14 +299,15 @@ class UploadFilesFromLinks(Resource):
                     continue  # Skip invalid entries
 
                 # 🔥 Secure filename from URL
-                filename = secure_filename(file_url.split("/")[-1])
+                upload_filename = secure_filename(file_url.split("/")[-1]) 
+                filename = secure_filename(file_info.get("filename") or upload_filename)  
                 file_extension = filename.rsplit(".", 1)[-1] if "." in filename else "csv"
 
                 # 🔥 Create File Entry in DB with `file_url` inside `parent_files`
 
                 file_data = {
-                    "filename": "",
-                    "upload_filename": secure_filename(filename),
+                    "filename": secure_filename(filename) if filename else upload_filename,
+                    "upload_filename": upload_filename,
                     "description": description,
                     "path": "",
                     "user_id": current_user_id,
