@@ -15,11 +15,11 @@ from routes.expectation_routes import expectations_ns
 from routes.validation_routes import validations_ns
 from routes.parametric_routes import parametrics_ns
 from flask_cors import CORS
-
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
-
+migrate = Migrate()
 
 
 class FlaskTask(Task):
@@ -48,6 +48,7 @@ def create_app(config_object="config.Config"):
     celery_init_app(app)
     # Initialize extensions
     db.init_app(app)
+    migrate.init_app(app, db) 
     api.init_app(
         app,
         version="1.0",
@@ -69,7 +70,7 @@ def create_app(config_object="config.Config"):
 
     # Create database tables if they don't exist
     with app.app_context():
-        
+
         db.create_all()
 
         from routes.task_routes import view_tasks_bp
