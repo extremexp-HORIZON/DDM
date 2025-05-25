@@ -35,9 +35,9 @@ export const FILES_API = {
   uploadViaLinks: async (projectId, files) => {
     const response = await axios.post(`${BASE_URL}/files/upload-links`, {
       project_id: projectId,
-      files: files.map(({ file_url, name, description, useCases, metadata }) => ({
+      files: files.map(({ file_url, filename, description, useCases, metadata }) => ({
         file_url,
-        name,
+        filename,
         description,
         use_cases: useCases,
         metadata,
