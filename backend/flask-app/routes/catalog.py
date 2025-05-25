@@ -3,14 +3,26 @@ from flask import request, jsonify
 from models.file import File
 from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
+from parsers.file_catalog_options_parser import file_options_parser
+
 
 catalog_ns = Namespace(name='catalog',description='File catalog operations', path=None)
 
 
 @catalog_ns.route('/')
 class FileCatalogResource(Resource):
+    @catalog_ns.doc(
+        description="Retrieve a paginated list of files with optional filters and sorting.",
+        security='apikey',
+        responses={
+            200: 'Files retrieved successfully',
+            400: 'Invalid request parameters',
+            500: 'Internal server error'
+        }
+    )
     @catalog_ns.expect(file_catalog_filter_parser)
     def get(self):
+        """Retrieve a paginated list of files with optional filters and sorting."""
         args = file_catalog_filter_parser.parse_args()
         sort = args.get('sort')
         page = args.get('page')
@@ -38,8 +50,18 @@ class FileCatalogResource(Resource):
 
 @catalog_ns.route('/my-catalog')
 class MyFileCatalogResource(Resource):
+    @catalog_ns.doc(
+        description="Retrieve the catalog of files uploaded by the current user.",
+        security='apikey',
+        responses={
+            200: 'User files retrieved successfully',
+            400: 'Invalid request parameters',
+            500: 'Internal server error'
+        }
+    )
     @catalog_ns.expect(file_catalog_filter_parser)
     def get(self):
+        """Retrieve the catalog of files uploaded by the current user."""
         args = file_catalog_filter_parser.parse_args()
         sort = args.get('sort')
         page = args.get('page')
@@ -65,10 +87,53 @@ class MyFileCatalogResource(Resource):
         }
 
 
+@catalog_ns.route('/options')
+class FileOptionsResource(Resource):
+    @catalog_ns.doc(
+        description="Retrieve file options based on project ID, filename, or user ID.",
+        security='apikey',
+        responses={
+            200: 'Options retrieved successfully',
+            400: 'Invalid query parameters',
+            500: 'Internal server error'
+        }
+    )
+    @catalog_ns.expect(file_options_parser)
+    def get(self):
+        """Retrieve file options based on project ID, filename, or user ID."""
+        args = file_options_parser.parse_args()
+        project_id = args.get("project_id")
+        filename = args.get("filename")
+        user_id = args.get("user_id")
+        query = File.query.filter(File.recdeleted != True)
+        if project_id:
+            query = query.filter(File.project_id == project_id)
+        if filename:
+            query = query.filter(File.filename == filename)
+        if user_id:
+            query = query.filter(File.user_id == user_id)
+        files = query.order_by(File.created.desc()).limit(100).all()
+        return [
+            {
+                "id": f.id,
+                "filename": f.filename,
+                "project_id": f.project_id,
+            }
+            for f in files
+        ]
 
 # Advanced File Query Endpoint (in the catalog namespace)
 @catalog_ns.route('/advanced')
 class FileAdvancedQueryResource(Resource):
+    @catalog_ns.doc(
+        description="Supports complex JSON expressions for advanced file filtering.",
+        security='apikey',
+        responses={
+            200: 'Files filtered successfully',
+            400: 'Invalid JSON format',
+            500: 'Internal server error'
+        }
+    )
     def post(self):
         """Supports complex JSON expressions for file filtering."""
         try:
