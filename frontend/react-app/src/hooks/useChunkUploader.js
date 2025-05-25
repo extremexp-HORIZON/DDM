@@ -9,6 +9,7 @@ const CHUNK_SIZE = 2 * 1024 * 1024;
 
 const FIELD_MAP = {
   name: "upload_filename",
+  filename: "filename",
   description: "description",
   useCases: "use_case",
 };
