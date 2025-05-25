@@ -22,6 +22,7 @@ export const useLinkUploader = (toast) => {
   const extractFileName = (file) => {
     if (!file) return "Unknown File";
     if (file.name) return file.name;
+    if (file.filename) return file.filename;
     if (file.file_url) return file.file_url.split("/").pop() || "file.txt";
     return "Unknown File";
   };
@@ -38,7 +39,8 @@ export const useLinkUploader = (toast) => {
       if (!fileId.startsWith("temp-")) {
         updateField(fileId, field, newValue);
       } else {
-        showMessage(toast, "info", `${field} saved locally.`);
+        showMessage(toast, "info", `${field} saved locally: ${JSON.stringify(newValue)}`);
+
       }
   
       setTempValues((prev) => {
@@ -52,7 +54,7 @@ export const useLinkUploader = (toast) => {
 
   const updateField = async (fileId, field, newValue) => {
     const fieldMapping = {
-      name: "upload_filename",
+      filename: "filename",
       useCases: "use_case",
       description: "description",
     };
@@ -60,7 +62,7 @@ export const useLinkUploader = (toast) => {
 
     try {
       await FILES_API.updateFileField(fileId, backendField, newValue);
-      showMessage(toast, "success", `${field} updated.New value: ${newValue}`);
+      showMessage(toast, "success", `${field} updated. New value: ${newValue}`);
     } catch (err) {
       showMessage(toast, "error", err.message);
     }
