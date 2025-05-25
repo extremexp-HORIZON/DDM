@@ -1,6 +1,6 @@
 from extensions.db import db
 from sqlalchemy.dialects.postgresql import JSONB
-from datetime import datetime, timezone
+from sqlalchemy.sql import func
 import uuid
 import zenoh
 import io
@@ -26,7 +26,7 @@ class File(db.Model):
     upload_filename= db.Column(db.String(255), nullable=True)
     path = db.Column(db.String(), nullable=False)
     user_id = db.Column(db.String(), nullable=False)
-    created = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    created = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     parent_files = db.Column(JSONB)  # Optional list of parent files
     file_size=db.Column(db.Integer())
     file_type = db.Column(db.String())  # Type of the file (e.g., PDF, CSV)
