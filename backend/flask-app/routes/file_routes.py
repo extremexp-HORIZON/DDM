@@ -67,15 +67,14 @@ class SingleFileUploadWithMetadataResource(Resource):
 
         # Secure the filename
         original_filename = secure_filename(file.filename)
-        if user_filename:
-            original_filename = secure_filename(user_filename)
+        filename_to_store = secure_filename(user_filename) if user_filename else original_filename
         file_parts = original_filename.rsplit('.', 1)
         upload_filename = file_parts[0]
         file_extension = file_parts[1] if len(file_parts) > 1 else ''
 
         try:
             file_data = {
-                "filename": "",
+                "filename": filename_to_store,
                 "upload_filename": original_filename,
                 "description": description,
                 "path": "",
@@ -190,20 +189,20 @@ class FileResource(Resource):
 
         try:
             # ✅ Use helper for everything else
-            update_file_record_in_db(
+            updated_file = update_file_record_in_db(
                 file_id=file_id,
                 path=data.get("path", file.path),
                 project_id=data.get("project_id", file.project_id),
                 file_size=data.get("file_size", file.file_size),
                 file_hash=data.get("file_hash", file.file_hash),
                 uploader_metadata=data.get("uploader_metadata", file.uploader_metadata),
-                filename=secure_filename(data["upload_filename"]) if "upload_filename" in data else file.filename,
+                filename=secure_filename(data.get("filename",file.filename)),
                 description=data.get("description", file.description)
             )
 
             return {
                 "message": "File updated successfully",
-                "updated_data": file.to_json()
+                "updated_data": updated_file.to_json()
             }, 200
 
         except Exception as e:
@@ -309,7 +308,7 @@ class AsyncFileUploadResource(Resource):
         if chunk_index == 0:
             try:
                 file_data = {
-                    "filename": "",
+                    "filename": upload_filename,
                     "upload_filename": upload_filename,
                     "path": "",
                     "user_id": current_user_id,
