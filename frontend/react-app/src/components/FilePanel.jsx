@@ -42,13 +42,13 @@ const FilePanel = ({
                     {getFileIconFromExt (ext)}
                     {/* ✅ Filename Field (Enter or Blur to Save) */}
                     <InputText
-                        value={tempValues[`${file.id}-name`] ?? file.name ?? extractFileName(file)}
-                        onChange={(e) => handleTempChange(file.id, "name", e.target.value)}
-                        onBlur={(e) => handleFieldSubmit(file.id, "name", e)}
+                        value={tempValues[`${file.id}-filename`] ?? file.name ?? extractFileName(file)}
+                        onChange={(e) => handleTempChange(file.id, "filename", e.target.value)}
+                        onBlur={(e) => handleFieldSubmit(file.id, "filename", e)}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault();
-                                handleFieldSubmit(file.id, "name", e);
+                                handleFieldSubmit(file.id, "filename", e);
                             }
                         }}
                         placeholder="Filename"
