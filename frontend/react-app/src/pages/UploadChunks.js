@@ -165,20 +165,20 @@ const ChunkUploader = () => {
       <FileUploadPanel
         files={files}
         tempValues={{
-          ...Object.fromEntries(Object.entries(tempFilename).map(([k, v]) => [`${k}-name`, v])),
+          ...Object.fromEntries(Object.entries(tempFilename).map(([k, v]) => [`${k}-filename`, v])),
           ...Object.fromEntries(Object.entries(tempUseCases).map(([k, v]) => [`${k}-useCases`, v])),
           ...Object.fromEntries(Object.entries(tempDescription).map(([k, v]) => [`${k}-description`, v]))
         }}
         metadataStore={metadataStore}
         setMetadataStore={setMetadataStore}
         handleTempChange={(fileId, field, value) => {
-          if (field === "name") setTempFilename((prev) => ({ ...prev, [fileId]: value }));
+          if (field === "filename") setTempFilename((prev) => ({ ...prev, [fileId]: value }));
           if (field === "description") setTempDescription((prev) => ({ ...prev, [fileId]: value }));
           if (field === "useCases") setTempUseCases((prev) => ({ ...prev, [fileId]: value }));
         }}
         handleFieldChange={updateField}
         handleFieldSubmit={(fileId, field, _) => {
-          if (field === "name") updateField(fileId, "upload_filename", tempFilename[fileId]);
+          if (field === "filename") updateField(fileId, "filename", tempFilename[fileId]);
           if (field === "description") updateField(fileId, "description", tempDescription[fileId]);
           if (field === "useCases") updateField(fileId, "use_case", tempUseCases[fileId]);
         }}
