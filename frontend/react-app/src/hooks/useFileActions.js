@@ -47,8 +47,35 @@ export const useFileActions = (reload, isDarkMode = false) => {
   };
 
 
+  const handleDeleteMultiple = (fileIds, onSuccess) => {
+    showConfirm({
+      message: `Are you sure you want to delete ${fileIds.length} file(s)?`,
+      header: "Delete Multiple Files",
+      icon: "pi pi-exclamation-triangle",
+      accept: async () => {
+        try {
+          await FILES_API.deleteMultipleFiles(fileIds);
+          showMessage(toast, "success", "Files deleted successfully");
+          onSuccess?.(); 
+          reload?.();
+        } catch (error) {
+          showMessage(toast, "error", `Delete failed: ${error.message}`);
+        }
+      },
+      reject: () => {
+        showMessage(toast, "info", "Deletion cancelled");
+      },
+      isDarkMode,
+    });
+  };
+  
 
-  return { handleDownload, handleDelete, handleDownloadMultiple };
 
+  return { 
+    handleDownload, 
+    handleDelete, 
+    handleDownloadMultiple, 
+    handleDeleteMultiple 
+  };
 
 };
