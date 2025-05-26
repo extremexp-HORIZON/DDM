@@ -8,13 +8,14 @@ import { showConfirm } from "../components/ConfirmDialog";
 export const useFileActions = (reload, isDarkMode = false) => {
   const toast = useToast();
 
-  const handleDownload = async (fileId) => {
+  const handleDownload = async (fileId, fallbackFilename = "downloaded_file") => {
     try {
-      await FILES_API.downloadFile(fileId);
+      await FILES_API.downloadFile(fileId, fallbackFilename);
     } catch (error) {
       showMessage(toast, "error", `Download failed: ${error.message}`);
     }
   };
+  
 
   const handleDelete = (fileId) => {
     showConfirm({
@@ -69,7 +70,6 @@ export const useFileActions = (reload, isDarkMode = false) => {
     });
   };
   
-
 
   return { 
     handleDownload, 
