@@ -268,7 +268,7 @@ const Catalog = () => {
               <Button 
                 icon="pi pi-download" 
                 className="p-button-sm p-button-text"  
-                onClick={() => handleDownload(rowData.id)} 
+                onClick={() => handleDownload(rowData.id,rowData.filename)} 
                 tooltip="Download file" 
                 tooltipOptions={{ position: "top" }}
               />
@@ -341,7 +341,8 @@ const Catalog = () => {
           className="p-button-success"
           onClick={() => {
             if (selectedRows.length === 1) {
-              handleDownload(selectedRows[0].id);
+              console.log(selectedRows[0].filename);
+              handleDownload(selectedRows[0].id, selectedRows[0].filename || "downloaded_file");
             } else {
               handleDownloadMultiple(selectedRows.map((row) => row.id));
             }
