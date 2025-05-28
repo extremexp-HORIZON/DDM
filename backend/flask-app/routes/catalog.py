@@ -3,6 +3,8 @@ from flask import request, jsonify
 from models.file import File
 from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
+import logging
+logger = logging.getLogger(__name__)
 
 catalog_ns = Namespace(name='catalog', description='File catalog operations', path=None)
 
@@ -12,6 +14,7 @@ class FileCatalogResource(Resource):
     @catalog_ns.expect(file_catalog_filter_parser)
     def get(self):
         args = file_catalog_filter_parser.parse_args()
+        logger.info(f"Received args: {args}")
         sort = args.get('sort')
         page = args.get('page')
         per_page = args.get('perPage')
