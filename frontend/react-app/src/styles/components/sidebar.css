@@ -32,4 +32,17 @@
     color: #333 !important;
   }
   
+  @media (max-width: 768px) {
+  .sidebar-container {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+  }
   
+
+  .cdb-sidebar .cdb-sidebar-menu-item {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
