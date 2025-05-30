@@ -51,17 +51,17 @@ const FileUploadPanel = ({
 
               <InputText
                 value={
-                  tempValues[`${fileObj.id}-name`] ??
+                  tempValues[`${fileObj.id}-filename`] ??
                   metadataStore?.[fileObj.id]?.name ??
                   (fileObj.id.startsWith("temp-") ? fileObj.name : fileObj.upload_filename) ??
                   extractFileName(fileObj.file)
                 }
-                onChange={(e) => handleTempChange(fileObj.id, "name", e.target.value)}
-                onBlur={(e) => handleFieldChange(fileObj.id, "name", e.target.value)}
+                onChange={(e) => handleTempChange(fileObj.id, "filename", e.target.value)}
+                onBlur={(e) => handleFieldChange(fileObj.id, "filename", e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    handleFieldChange(fileObj.id, "name", e.target.value);
+                    handleFieldChange(fileObj.id, "filename", e.target.value);
                   }
                 }}
                 placeholder="Filename"
@@ -94,8 +94,11 @@ const FileUploadPanel = ({
                   (
                     tempValues[`${fileObj.id}-useCases`] ??
                     metadataStore[fileObj.id]?.useCases ??
-                    fileObj.use_case
-                  )?.length === 0 ? "Use Cases" : undefined
+                    fileObj.use_case ??
+                    []
+                  ).length === 0
+                    ? "Use Cases"
+                    : undefined
                 }
 
                 className="p-chips p-component"

@@ -1,5 +1,6 @@
 eventlet==0.39.0
 Flask==3.1.0
+Flask-Migrate==4.1.0
 python-dotenv==1.0.1
 fixtures
 Flask-Cors==5.0.0

@@ -91,12 +91,12 @@ const useCaseTemplate = (rowData) => {
 
 const filenameWithIconTemplate = (rowData) => {
   const icon = getFileIconFromExt(rowData.file_type);
-  const name = rowData.upload_filename || "Unnamed";
+  const filename = rowData.filename || "Unnamed";
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
       {icon}
-      <span>{name}</span>
+      <span>{filename}</span>
     </div>
   );
 };
@@ -128,10 +128,10 @@ export const catalogColumns = (onCellEditComplete) => [
     style: { width: "3em" },
   },
   {
-    field: "upload_filename",
+    field: "filename",
     header: "Filename",
     editor: textEditor,
-    body: filenameWithIconTemplate, // 👈 Here you use the icon-rendering function
+    body: filenameWithIconTemplate,
     onCellEditComplete,
     sortable: true,
   },  

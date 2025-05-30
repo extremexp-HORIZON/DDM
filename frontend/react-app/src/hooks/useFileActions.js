@@ -8,13 +8,14 @@ import { showConfirm } from "../components/ConfirmDialog";
 export const useFileActions = (reload, isDarkMode = false) => {
   const toast = useToast();
 
-  const handleDownload = async (fileId) => {
+  const handleDownload = async (fileId, fallbackFilename = "downloaded_file") => {
     try {
-      await FILES_API.downloadFile(fileId);
+      await FILES_API.downloadFile(fileId, fallbackFilename);
     } catch (error) {
       showMessage(toast, "error", `Download failed: ${error.message}`);
     }
   };
+  
 
   const handleDelete = (fileId) => {
     showConfirm({
@@ -47,8 +48,34 @@ export const useFileActions = (reload, isDarkMode = false) => {
   };
 
 
+  const handleDeleteMultiple = (fileIds, onSuccess) => {
+    showConfirm({
+      message: `Are you sure you want to delete ${fileIds.length} file(s)?`,
+      header: "Delete Multiple Files",
+      icon: "pi pi-exclamation-triangle",
+      accept: async () => {
+        try {
+          await FILES_API.deleteMultipleFiles(fileIds);
+          showMessage(toast, "success", "Files deleted successfully");
+          onSuccess?.(); 
+          reload?.();
+        } catch (error) {
+          showMessage(toast, "error", `Delete failed: ${error.message}`);
+        }
+      },
+      reject: () => {
+        showMessage(toast, "info", "Deletion cancelled");
+      },
+      isDarkMode,
+    });
+  };
+  
 
-  return { handleDownload, handleDelete, handleDownloadMultiple };
-
+  return { 
+    handleDownload, 
+    handleDelete, 
+    handleDownloadMultiple, 
+    handleDeleteMultiple 
+  };
 
 };

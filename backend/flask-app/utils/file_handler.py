@@ -50,7 +50,7 @@ def save_file_record(file_data):
         raise  # or return None / False if you'd rather handle it that way
 
 
-def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metadata=None, filename=None, description=None):
+def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metadata=None, filename=None, description=None, project_id=None):
     """Update file record with storage info."""
     try:
         file_record = File.query.get(file_id)
@@ -62,13 +62,15 @@ def update_file_record_in_db(file_id, path, file_size, file_hash, uploader_metad
         file_record.file_hash = file_hash
         if uploader_metadata is not None:
             file_record.uploader_metadata = uploader_metadata
-        if filename is not None:
+        if filename is not None :
             file_record.filename=filename
         if description is not None:
             file_record.description = description
+        if project_id is not None:
+            file_record.project_id = project_id
 
         db.session.commit()
-        return True
+        return file_record  
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -103,7 +105,7 @@ def update_multiple_file_records(file_updates):
         for key, value in file_info.items():
             if key in allowed_fields and value is not None:
                 if key == "upload_filename":
-                    file.upload_filename = secure_filename(value)
+                    file.filename = secure_filename(value)
                 elif key == "use_case":
                     if not isinstance(value, list):
                         errors.append({"file_id": file_id, "message": "use_case must be a list."})

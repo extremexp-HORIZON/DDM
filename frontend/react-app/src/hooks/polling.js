@@ -3,7 +3,7 @@ import { pollTaskResult } from "../api/tasks";
 import { showMessage } from "../utils/messages";
 
 const POLL_INTERVAL = 2000;
-const MAX_POLL_DURATION = 120000;
+const MAX_POLL_DURATION = 600000;
 
 export const pollFetchTask = async (taskId, fileRef, processTaskId, setFiles, toast) => {
   try {

@@ -42,9 +42,9 @@ export const FILES_API = {
   uploadViaLinks: async (projectId, files) => {
     const response = await axios.post(`${BASE_URL}/files/upload-links`, {
       project_id: projectId,
-      files: files.map(({ file_url, name, description, useCases, metadata }) => ({
+      files: files.map(({ file_url, filename, description, useCases, metadata }) => ({
         file_url,
-        name,
+        filename,
         description,
         use_cases: useCases,
         metadata,
@@ -80,22 +80,22 @@ export const FILES_API = {
     return response.json();
   },
   
-  downloadFile: async (fileId) => {
+  downloadFile: async (fileId, fallbackFilename = "downloaded_file") => {
     const response = await axios.get(`${BASE_URL}/file/${fileId}`, {
       responseType: "blob", // ← to handle binary data
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
     });
-
+  
     const blob = new Blob([response.data]);
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-
+  
     const disposition = response.headers["content-disposition"];
     const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-    const filename = filenameMatch?.[1] || "downloaded_file";
-
+    const filename = filenameMatch?.[1] || fallbackFilename;
+  
     link.href = url;
     link.setAttribute("download", filename);
     document.body.appendChild(link);
@@ -103,6 +103,7 @@ export const FILES_API = {
     link.remove();
     window.URL.revokeObjectURL(url);
   },
+  
 
   deleteFile: async (fileId) => {
     const response = await axios.delete(`${BASE_URL}/file/${fileId}/delete`,

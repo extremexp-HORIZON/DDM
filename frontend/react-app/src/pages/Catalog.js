@@ -100,7 +100,8 @@ const Catalog = () => {
   const { 
     handleDownload, 
     handleDelete, 
-    handleDownloadMultiple
+    handleDownloadMultiple,
+    handleDeleteMultiple
   } = useFileActions(reload);
 
 
@@ -267,7 +268,7 @@ const Catalog = () => {
               <Button 
                 icon="pi pi-download" 
                 className="p-button-sm p-button-text"  
-                onClick={() => handleDownload(rowData.id)} 
+                onClick={() => handleDownload(rowData.id,rowData.filename)} 
                 tooltip="Download file" 
                 tooltipOptions={{ position: "top" }}
               />
@@ -310,9 +311,6 @@ const Catalog = () => {
         jsonData={jsonDialogData}
       />
 
-
-
-
       <Dialog
         header="Selected File Details"
         visible={showAllDialogVisible}
@@ -343,7 +341,8 @@ const Catalog = () => {
           className="p-button-success"
           onClick={() => {
             if (selectedRows.length === 1) {
-              handleDownload(selectedRows[0].id);
+              console.log(selectedRows[0].filename);
+              handleDownload(selectedRows[0].id, selectedRows[0].filename || "downloaded_file");
             } else {
               handleDownloadMultiple(selectedRows.map((row) => row.id));
             }
@@ -360,6 +359,18 @@ const Catalog = () => {
               .join("\n\n");
             setShowAllDialogContent(info);
             setShowAllDialogVisible(true);
+          }}
+        />
+
+        <Button
+          label={`Delete ${selectedRows.length} File${selectedRows.length > 1 ? "s" : ""}`}
+          icon="pi pi-trash"
+          className="p-button-danger"
+          onClick={() => {
+            handleDeleteMultiple(
+              selectedRows.map(row => row.id),
+              () => setSelectedRows(null)  // Clear selection after successful delete
+            );
           }}
         />
 

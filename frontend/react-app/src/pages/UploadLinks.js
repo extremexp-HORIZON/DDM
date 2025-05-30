@@ -45,7 +45,7 @@ const LinkUploader = () => {
           existingData || {
             id: `temp-${index}`,
             file_url: link,
-            name: link.split("/").pop(),
+            filename: link.split("/").pop(),
             description: "",
             useCases: [],
             metadata: {},

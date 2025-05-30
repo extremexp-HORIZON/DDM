@@ -22,7 +22,7 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
     const updateField = async (fileId, field, newValue) => {
         if (!fileId || fileId.startsWith("temp-")) return;
         const fieldMapping = {
-            name: "upload_filename",
+            filename: "filename",
             description: "description",
             useCases: "use_case",
         };
@@ -40,18 +40,31 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
         if (prevValue === value) return;
     
         setTempValues((prev) => ({ ...prev, [`${fileId}-${field}`]: value }));
-        setMetadataStore((prev) => ({
+        const normalizedFieldMap = {
+            filename: "filename",
+            useCases: "use_case",
+          };
+          const key = normalizedFieldMap[field] || field;
+          
+          setMetadataStore((prev) => ({
             ...prev,
-            [fileId]: { ...prev[fileId], [field]: value },
-        }));
+            [fileId]: { ...prev[fileId], [key]: value },
+          }));
+          
     
         if (!fileId.startsWith("temp-")) {
             updateField(fileId, field, value).then(() => {
                 setFiles((prev) =>
                     prev.map((file) =>
-                        file.id === fileId ? { ...file, [field]: value } : file
+                      file.id === fileId
+                        ? {
+                            ...file,
+                            [field]: value,
+                            ...(field === "filename" ? { name: value, filename: value } : {}),
+                          }
+                        : file
                     )
-                );
+                  );
             });
         } else {
             showMessage(toast, "success", `Updated ${field} to: ${value}`);
@@ -159,27 +172,42 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
 
         const metadataFiles = [];
 
-        filesToUpload.forEach((f) => {
+        filesToUpload.forEach((f,index) => {
             const meta = metadataStore[f.id] || {};
+
+          
             formData.append("files", f.file);
-            formData.append("user_filenames", meta.name || f.file.name);
-            formData.append("descriptions", meta.description || "");
-            formData.append("use_case", JSON.stringify(meta.useCases || []));
-
-            if (meta.metadata) {
-            const metaBlob = new Blob([
-                typeof meta.metadata === "string"
-                ? meta.metadata
-                : JSON.stringify(meta.metadata)
-            ], { type: "application/json" });
-
-            const metaFile = new File([metaBlob], `metadata_${f.file.name}.json`, {
-                type: "application/json"
+          
+            const filename = meta.filename || meta.name || f.file.name;
+            const description = meta.description || "";
+            const use_case = meta.use_case || meta.useCases || [];
+          
+            formData.append("user_filenames", filename);
+            formData.append("descriptions", description);
+            formData.append("use_case", JSON.stringify(use_case));
+            console.log(`📦 File[${index}]:`, {
+                id: f.id,
+                originalName: f.file.name,
+                meta,
+                filename,
+                description,
+                use_case
             });
-
-            metadataFiles.push(metaFile);
+          
+            if (meta.metadata) {
+              const metaBlob = new Blob(
+                [typeof meta.metadata === "string" ? meta.metadata : JSON.stringify(meta.metadata)],
+                { type: "application/json" }
+              );
+          
+              const metaFile = new File([metaBlob], `metadata_${f.file.name}.json`, {
+                type: "application/json"
+              });
+          
+              metadataFiles.push(metaFile);
             }
         });
+          
 
         metadataFiles.forEach((f) => formData.append("metadata-files", f));
 
@@ -199,7 +227,7 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
                 return {
                 id: f.id,
                 upload_filename: f.upload_filename,
-                name: localMeta.name || f.upload_filename,
+                name: localMeta.filename || f.upload_filename,
                 description: localMeta.description || "",
                 use_case: localMeta.useCases || [],
                 metadata: localMeta.metadata || {},
@@ -216,19 +244,22 @@ export const useFileUploader =  ({ toast, fileUploadRef }) => {
 
             // 🔁 Move metadataStore from temp to real ID
             uploaded.forEach((f) => {
-            const tempId = filesToUpload.find(tempFile => tempFile.file.name === f.upload_filename)?.id;
-            if (metadataStore[tempId]) {
-                setMetadataStore((prev) => ({
-                ...prev,
-                [f.id]: metadataStore[tempId],
-                }));
-            }
-
-            if (f.metadata_task_id) {
-                pollMetadataTask(f.metadata_task_id, f.id, setFiles, toast);
-            }
+                const tempId = filesToUpload.find(tempFile => tempFile.file.name === f.upload_filename)?.id;
+                
+                if (metadataStore[tempId]) {
+                    setMetadataStore((prev) => {
+                    const updatedStore = { ...prev };
+                    updatedStore[f.id] = updatedStore[tempId];
+                    delete updatedStore[tempId];
+                    return updatedStore;
+                    });
+                }
+                
+                if (f.metadata_task_id) {
+                    pollMetadataTask(f.metadata_task_id, f.id, setFiles, toast);
+                }
             });
-
+              
             showMessage(toast, "success", `${uploaded.length} file(s) uploaded: ${uploadedNames.join(", ")}`);
         } catch (err) {
             console.error("Upload failed:", err);
