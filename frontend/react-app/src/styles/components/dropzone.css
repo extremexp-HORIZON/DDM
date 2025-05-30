@@ -91,16 +91,6 @@ body {
 }
 
 
-/* Buttons */
-.dark-mode .p-button {
-  background-color: inherit;
-
-}
-
-.dark-mode .p-button:hover {
-  background-color: inherit;
-}
-
 /* Input Fields */
 .dark-mode .p-inputtext {
   background-color: #212529;
