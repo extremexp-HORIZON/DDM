@@ -2,3 +2,7 @@
 env
 node_modules/
 dist/
+zenoh*
+**/__pycache__
+**/*.pyc
+**/.idea/

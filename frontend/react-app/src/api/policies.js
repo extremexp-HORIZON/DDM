@@ -6,7 +6,7 @@ export const POLICIES_API = {
   postPolicy: async (query) => {
     const response = await fetch(`${BASE_URL}/policies/`, {
       method: "POST",
-      headers: defaultHeaders,
+      headers: defaultHeaders.json,
       body: JSON.stringify({ query }),
     });
 

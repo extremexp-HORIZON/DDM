@@ -4,7 +4,10 @@ import { BASE_URL } from "./base";
 export const UploaderMetadataAPI = {
   upload: async (fileId, metadata) => {
     const url = `${BASE_URL}/uploader_metadata/${fileId}`;
-    const headers = { "Content-Type": "application/json" };
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`
+    };
 
     const requestBody = { uploader_metadata: metadata };
 
@@ -28,7 +31,12 @@ export const UploaderMetadataAPI = {
   getUploaderMetadataById: async (fileId) => {
     const url = `${BASE_URL}/uploader_metadata/${fileId}`;
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(url,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
       return response.data; // assuming API returns JSON
     } catch (error) {
       const message =

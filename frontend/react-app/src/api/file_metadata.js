@@ -5,7 +5,9 @@ import { BASE_URL } from "./base";
 export const FILE_METADATA_API = {
   fetchHtmlReport: async (fileId) => {
     const response = await axios.get(`${BASE_URL}/file_metadata/report/${fileId}`, {
-      headers: { "Content-Type": "text/html" },
+      headers: { "Content-Type": "text/html",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      },
       responseType: "text", // ensure it's returned as a string
     });
     return response.data;
@@ -17,6 +19,9 @@ export const FILE_METADATA_API = {
       { file_ids: fileIds },
       {
         responseType: "blob", // ZIP file
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
       }
     );
 
@@ -35,7 +40,13 @@ export const FILE_METADATA_API = {
   },
 
   getFileMetadataById: async (fileId) => {
-    const response = await axios.get(`${BASE_URL}/file_metadata/${fileId}`);
+    const response = await axios.get(`${BASE_URL}/file_metadata/${fileId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+      );
     return response.data;
   },
 

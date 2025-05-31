@@ -17,10 +17,13 @@
   width: 100%; 
 }
 
-.dark-mode .p-component{
-  background-color: #212529; /* Slightly lighter dark background for form fields */
+.dark-mode .p-component:not(.p-button) {
+  background-color: #212529;
   border-color: #888;
 }
+
+
+
 
 .dark-mode .p-datatable .p-datatable-thead > tr > th{
   background-color: #2e30326a!important;/* Dark background for table rows */

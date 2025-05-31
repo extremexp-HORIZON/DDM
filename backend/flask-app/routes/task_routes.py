@@ -2,7 +2,7 @@
 from celery.result import AsyncResult
 from flask import Blueprint, jsonify
 
-view_tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
+view_tasks_bp = Blueprint("tasks", __name__, url_prefix="/ddm/tasks")
 
 
 @view_tasks_bp.get("/result/<id>")

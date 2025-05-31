@@ -5,11 +5,13 @@ from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
 from parsers.file_catalog_options_parser import file_options_parser
 
+import logging
+logger = logging.getLogger(__name__)
 
-catalog_ns = Namespace(name='catalog',description='File catalog operations', path=None)
+catalog_ns = Namespace(name='catalog', description='File catalog operations', path=None)
 
 
-@catalog_ns.route('/')
+@catalog_ns.route('/list')
 class FileCatalogResource(Resource):
     @catalog_ns.doc(
         description="Retrieve a paginated list of files with optional filters and sorting.",
@@ -24,6 +26,7 @@ class FileCatalogResource(Resource):
     def get(self):
         """Retrieve a paginated list of files with optional filters and sorting."""
         args = file_catalog_filter_parser.parse_args()
+        logger.info(f"Received args: {args}")
         sort = args.get('sort')
         page = args.get('page')
         per_page = args.get('perPage')

@@ -22,3 +22,6 @@
   .p-datatable.p-datatable-scrollable > .p-datatable-wrapper > .p-datatable-table > .p-datatable-thead {
     background-color: inherit;
   }
+  .dark-mode .p-datatable .p-datatable-tbody > tr > td .p-button {
+    border: None;
+  }
