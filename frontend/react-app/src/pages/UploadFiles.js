@@ -212,7 +212,7 @@ const FileUploader = () => {
         setMetadataInput={setMetadataInput}
         onMetadataFileSelect={handleMetadataFileSelect}
         currentFileId={currentFileId}
-        onSubmit={handleSubmit} // 👈 this one from here
+        onSubmit={handleSubmit}
       />
     </div>
   );
