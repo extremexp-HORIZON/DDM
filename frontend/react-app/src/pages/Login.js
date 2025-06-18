@@ -2,70 +2,63 @@ import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import "primeflex/primeflex.css";
-import React, {useState} from "react";
-import {Button} from "primereact/button";
-import {InputText} from "primereact/inputtext";
-import axios from "axios";
-import {BASE_AUTH_URL} from "../api/base";
-import {useNavigate} from "react-router-dom";
+import React from "react";
+import { Card } from "primereact/card";
+import { Button } from "primereact/button";
+import { InputText } from "primereact/inputtext";
+import { useLogin } from "../hooks/useLogin";
 
 const LoginPage = () => {
-    const navigate = useNavigate();
-    const [username, setUsername] = useState(null);
-    const [password, setPassword] = useState(null);
+  const { username, setUsername, password, setPassword, requestLogin } = useLogin();
 
-    const requestLogin = async () => {
-        const data = {
-            username: username,
-            password: password
-        };
-        const response = await axios.post(`${BASE_AUTH_URL}/extreme_auth/api/v1/person/login`, data);
-        if (response.status === 200) {
-            console.log(response);
-            const token = response.data["access_token"];
-            localStorage.setItem("token", token);
-            navigate("/");
+  return (
+    <div className="flex justify-content-center align-items-center min-h-screen">
+      <Card
+        title={
+          <div className="flex flex-column align-items-center">
+            <img src="/logo-carre.png" alt="Logo" style={{ width: 80, marginBottom: "1rem" }} />
+            <h3 className="m-0">Login to ExtremeXP</h3>
+          </div>
         }
-    }
+        className="shadow-4 p-4"
+        style={{ width: "400px" }}
+      >
+      <div className="field mb-3">
+        <label htmlFor="username" className="block mb-2 flex align-items-center gap-2">
+          <i className="pi pi-user" />
+          <span>Username</span>
+        </label>
+        <InputText
+          id="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full"
+        />
+      </div>
 
-    return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "15px",
-                justifyContent: "center",
-                marginTop: "20px",
-                width: "100%",
-            }}
-        >
-            <div className="filter-item">
-                <label>Username</label>
-                <InputText
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={username?.length ? "" : "  Type your username"}
-                />
-            </div>
-            <div className="filter-item">
-                <label>Password</label>
-                <InputText
-                    value={password}
-                    type={"password"}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={password?.length ? "" : "  Type your password"}
-                />
-            </div>
-            <div className="filter-item">
-                <Button
-                    label="Login"
-                    className="p-button-rounded p-button-text"
-                    style={{ border: "none" }}
-                    onClick={requestLogin}
-                />
-            </div>
-        </div>
-    );
-}
+      <div className="field mb-3">
+        <label htmlFor="password" className="block mb-2 flex align-items-center gap-2">
+          <i className="pi pi-lock" />
+          <span>Password</span>
+        </label>
+        <InputText
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full"
+        />
+      </div>
+
+        <Button
+          label="Login"
+          icon="pi pi-sign-in"
+          className="w-full"
+          onClick={requestLogin}
+        />
+      </Card>
+    </div>
+  );
+};
 
 export default LoginPage;
