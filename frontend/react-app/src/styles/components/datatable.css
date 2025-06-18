@@ -25,3 +25,25 @@
   .dark-mode .p-datatable .p-datatable-tbody > tr > td .p-button {
     border: None;
   }
+
+  .dark-mode .p-datatable .p-tag {
+    background: #212529
+  }
+
+    /* TreeTable Dark Mode Support */
+  .dark-mode .p-treetable .p-treetable-thead > tr > th {
+    background-color: #212529; /* dark gray */
+    color: #f3f4f6;            /* light text */
+    border-color: #374151;
+  }
+
+  .dark-mode .p-treetable .p-treetable-tbody > tr > td {
+    background-color: #212529; /* even darker background */
+    color: #d1d5db;            /* light gray text */
+    border-color: #374151;
+  }
+
+  /* Optional: zebra striping for rows */
+  .dark-mode .p-treetable .p-treetable-tbody > tr:nth-child(even) > td {
+    background-color: #212525;
+  }
