@@ -5,6 +5,7 @@ import uuid
 import zenoh
 import io
 import logging
+from models.user import UserAction
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class File(db.Model):
     nft_metadata = db.Column(JSONB)  # Optional metadata related to NFTs
     file_metadata = db.Column(JSONB)  # Store metadata in JSONB format (PostgreSQL)
 
+
     def __repr__(self):
         return f"<File {self.id}, {self.filename}>"
     
@@ -58,6 +60,7 @@ class File(db.Model):
         }
     
     def to_catalog(self):
+        actions = UserAction.query.filter_by(file_id=self.id).order_by(UserAction.timestamp.asc()).all()
         """Converts the File model to a JSON-serializable dictionary for catalog."""
         return {
             'id': self.id,
@@ -73,7 +76,8 @@ class File(db.Model):
             'file_size': self.file_size,
             'file_type': self.file_type,
             'recdeleted': self.recdeleted,
-            'file_metadata': self.file_metadata
+            'file_metadata': self.file_metadata,
+            'file_actions': [action.to_json() for action in actions]
         }
     
     @staticmethod
