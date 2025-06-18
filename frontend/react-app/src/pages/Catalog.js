@@ -13,6 +13,7 @@ import { useFileActions } from "../hooks/useFileActions";
 import { useFileMetadata } from "../hooks/useFileMetadata";
 import { useUploaderMetadata } from "../hooks/useUploaderMetadata";
 import { useValidationResultsByDataset } from "../hooks/useValidationResultsByDataset";
+import { useValidations } from "../hooks/useValidations";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Button } from "primereact/button";
@@ -20,7 +21,6 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Tooltip } from 'primereact/tooltip'; 
 import { Dialog } from "primereact/dialog";
 import { showMessage } from '../utils/messages';
-import { VALIDATIONS_API } from "../api/validations";
 import ValidateAgainstSuitesDialog from "../components/ValidateAgainstSuitesDialog";
 
 import "primereact/resources/themes/lara-light-blue/theme.css";
@@ -31,6 +31,7 @@ import "primeflex/primeflex.css";
 
 
 const Catalog = () => {
+
   const { isDarkMode } = useTheme();
   const toast = useToast();
   const tooltipRef = useRef(null);
@@ -52,26 +53,11 @@ const Catalog = () => {
   const [showAllDialogVisible, setShowAllDialogVisible] = useState(false);
   const [showAllDialogContent, setShowAllDialogContent] = useState('');
 
-
-  const handleValidateAgainstSuites = async (fileId, suiteIds) => {
-    try {
-      const payload = {
-        file_id: fileId,
-        suite_ids: suiteIds
-      };
-      await VALIDATIONS_API.validateFileAgainstSuites(payload);
-      showMessage(toast, "success", "Validation started.");
-    } catch (error) {
-      console.error(error);
-      showMessage(toast, "error", error.message || "Failed to start validation.");
-    }
-  };
+  const { validateFileAgainstSuites } = useValidations();
   
-
   const { 
     fileTypes,
   } = useAllFileTypes();
-
 
   const [filters, setFilters] = useState({
     filename: "",
@@ -186,7 +172,6 @@ const Catalog = () => {
         currentPageReportTemplate="{first} to {last} of {totalRecords}"
       >
 
-
         {/* Dynamically generated editable columns */}
         {catalogColumns(onCellEditComplete).map((col, index) => (
           <Column key={index} {...col} />
@@ -292,10 +277,9 @@ const Catalog = () => {
       <ValidateAgainstSuitesDialog
         visible={validateDialogVisible}
         onHide={() => setValidateDialogVisible(false)}
-        onSubmit={handleValidateAgainstSuites}
+        onSubmit={(suiteIds) => validateFileAgainstSuites(selectedFileId, suiteIds)}
         fileId={selectedFileId}
       />
-
 
       <ValidationResultsCatalog
         visible={validationDialogVisible}
@@ -322,8 +306,6 @@ const Catalog = () => {
           {showAllDialogContent}
         </pre>
       </Dialog>
-
-
 
       {selectedRows?.length > 0 && (
       <div
@@ -376,8 +358,6 @@ const Catalog = () => {
 
       </div>
     )}
-
-
 
     </div>
   );
