@@ -6,12 +6,13 @@ from extensions.db import db
 from extensions.llm import llm
 from utils.zenoh_file_handler import ZenohFileHandler,merge_file_chunks_from_zenoh,download_file_from_zenoh,save_processed_file
 from utils.file_df_loader import load_dataframe 
-from utils.file_helpers import  cleanup_files,load_dataframe_or_image, compute_file_hash, download_file_from_url
+from utils.file_helpers import  cleanup_files,load_dataframe_or_image, compute_file_hash, download_file_from_url, merge_metadata
 from utils.file_handler import get_file_record,update_file_record_in_db, store_file_metadata_in_db
 from utils.expectations_handler import save_validation_result, get_expectation_suite
 from services.expectation_engine import run_expectation_suite, build_expectations_grouped,build_metadata
 from services.dataset_profiling import generate_profile_report
 from services.metadata_generator import generate_and_save_dataframe_metadata
+from utils.user_file_logger import log_action_with_context
 import traceback
 import logging
 import requests
@@ -33,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)  # Get a named logger
 
 @shared_task(ignore_result=False)
-def process_large_file(file_id_or_result):
+def process_large_file(file_id_or_result, username):
     logger.info(f"Received input: {file_id_or_result}")
     file_id = file_id_or_result.get("file_id") if isinstance(file_id_or_result, dict) else file_id_or_result
 
@@ -42,6 +43,13 @@ def process_large_file(file_id_or_result):
 
     try:
         file_record = get_file_record(file_id)
+
+        if isinstance(file_record.file_metadata, str):
+            try:
+                file_record.file_metadata = json.loads(file_record.file_metadata)
+            except json.JSONDecodeError:
+                file_record.file_metadata = {}
+
         file_path = file_record.path
         local_path = f"/tmp/{file_id}{os.path.splitext(file_path)[-1]}"
         download_file_from_zenoh(file_path, local_path)
@@ -53,16 +61,35 @@ def process_large_file(file_id_or_result):
 
         # Save metadata
         summary_json = generate_and_save_dataframe_metadata(df, file_id, file_record.project_id)
-        if summary_json:
-            file_record.file_metadata = summary_json
+        log_action_with_context(
+            username=username,
+            action_type="generate_metadata",
+            file_id=file_id,
+            metadata={
+                "project_id": file_record.project_id
+            }
+
+        )    
+
+        merge_metadata(file_record, summary_json)
+
         db.session.add(file_record)
         db.session.commit()
 
         # Profile report
         profile_html = generate_profile_report(df, file_id, file_record.project_id)
-
+        log_action_with_context(    
+            username=username,
+            action_type="generate_profile_report",
+            file_id=file_id,
+            metadata={
+                "project_id": file_record.project_id,
+                "zenoh_path": f"/projects/{file_record.project_id}/files/{file_id}/{file_id}_profile_report.html",
+            }
+        )
         # Save processed back to Zenoh
-        processed_path = save_processed_file(df, file_path, os.path.splitext(file_path)[-1])
+        sep = file_record.file_metadata.get("separator", ",")
+        processed_path = save_processed_file(df, file_path, os.path.splitext(file_path)[-1], sep=sep)
         cleanup_files([local_path, processed_path])
 
         return {"message": "File processed successfully", "profile_html": profile_html}
@@ -77,7 +104,7 @@ def process_large_file(file_id_or_result):
 
 
 @shared_task(ignore_result=False)
-def merge_chunks_task(file_id, project_id, total_chunks, final_filename):
+def merge_chunks_task(file_id, project_id, total_chunks, final_filename, username):
     """Merge file chunks stored in Zenoh and store the final file."""
     try:
         merged_content, error = merge_file_chunks_from_zenoh(file_id, project_id, total_chunks)
@@ -100,8 +127,18 @@ def merge_chunks_task(file_id, project_id, total_chunks, final_filename):
 
         # Update database record
         update_file_record_in_db(file_id, zenoh_file_path, len(file_bytes), file_hash)
-
         db.session.remove()
+        file_record = get_file_record(file_id)
+        log_action_with_context(
+            username=username,
+            action_type="merge_chunks",
+            file_id=file_id,
+            metadata={
+                "project_id": project_id,
+                "zenoh_path": zenoh_file_path,
+                "final_filename": final_filename
+            }
+        )
         logger.info(f"✅ File merge complete and saved at: {zenoh_file_path}")
         return {'status': 'success', 'file_id': file_id}
 
@@ -111,7 +148,7 @@ def merge_chunks_task(file_id, project_id, total_chunks, final_filename):
 
 
 @shared_task(ignore_result=False)
-def fetch_file_from_link(file_url, file_id, zenoh_file_path):
+def fetch_file_from_link(file_url, file_id, zenoh_file_path, username):
     """Fetches a file from a link and stores it in Zenoh."""
     try:
         file_data = download_file_from_url(file_url)
@@ -123,6 +160,15 @@ def fetch_file_from_link(file_url, file_id, zenoh_file_path):
         store_file_metadata_in_db(file_id, zenoh_file_path, len(file_data), file_hash)
 
         logger.info(f"✅ File successfully retrieved and stored: {zenoh_file_path}")
+        log_action_with_context(
+            username=username, 
+            action_type="fetch_file_from_link",
+            file_id=file_id,
+            metadata={
+                "file_url": file_url,
+                "zenoh_path": zenoh_file_path
+            }
+        )
         return {"file_id": file_id, "zenoh_path": zenoh_file_path}
 
     except requests.exceptions.RequestException as e:
@@ -135,7 +181,7 @@ def fetch_file_from_link(file_url, file_id, zenoh_file_path):
     
 
 @shared_task(bind=True, ignore_result=False)
-def build_expectations_task(self, zenoh_file_path):
+def build_expectations_task(self, zenoh_file_path, username):
     local_path = os.path.join("/uploads", zenoh_file_path)
 
     try:
@@ -158,6 +204,7 @@ def build_expectations_task(self, zenoh_file_path):
             "expectations": json.loads(json.dumps(expectations, default=str)),
             "table_expectations": table_expectations,
             "column_names": column_names,
+            "username": username
         }
 
     except Exception as e:
@@ -168,7 +215,7 @@ def build_expectations_task(self, zenoh_file_path):
 
 
 @shared_task(bind=True, ignore_result=False)
-def run_expectation_suites_task(self, file_id, suite_ids):
+def run_expectation_suites_task(self, file_id, suite_ids, username):
     try:
         file_record = get_file_record(file_id)
         if not file_record:
@@ -216,6 +263,17 @@ def run_expectation_suites_task(self, file_id, suite_ids):
                 "column_descriptions": column_descriptions,
                 "summary": suite_result.get("summary", {})
             })
+
+            log_action_with_context(
+                username=file_record.user_id,
+                action_type="run_expectation_suites",
+                file_id=file_id,
+                metadata={
+                    "project_id": project_id,
+                    "suites": suite_ids,
+                    "results_summary": results_summary
+                }
+            )
         return {
             "status": "completed",
             "results": results_summary
@@ -234,8 +292,10 @@ def run_expectation_suites_task(self, file_id, suite_ids):
 def build_column_descriptions_task(self, previous_result):
     try:
         column_names = previous_result.get("column_names")
+        username = previous_result.get("username")
         if not column_names:
             return {"error": "Missing description prompt."}
+        
 
         prompt_parts = [
             "You are a helpful data assistant. For each column below, describe its meaning in one short sentence.",
@@ -259,6 +319,17 @@ def build_column_descriptions_task(self, previous_result):
         local_path = previous_result.get("local_path")
         if local_path and os.path.exists(local_path):
             os.remove(local_path)
+            
+        log_action_with_context(
+            username=username,
+            action_type="build_column_descriptions",
+            file_id=previous_result.get("file_id"),
+            metadata={
+                "project_id": previous_result.get("project_id"),
+                "description_prompt": description_prompt,
+                "result_length": len(parsed_result)
+            }
+        )
 
         return parsed_result  # ✅ Already in correct [{column, description}] format
 
