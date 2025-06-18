@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from extensions.db import db
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.sql import func
 from services.expectation_engine import build_metadata, extract_expectation_descriptions
 
 def generate_uuid():
@@ -22,7 +23,7 @@ class ExpectationSuites(db.Model):
     use_case = db.Column(db.String(), nullable=True)
     column_descriptions = db.Column(JSONB, nullable=True)
     column_names = db.Column(JSONB, nullable=True)
-    created = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    created = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
         return f"<ExpectationSuite {self.suite_name}>"
@@ -69,7 +70,7 @@ class ValidationResults(db.Model):
     dataset_id = db.Column(db.String(255), nullable=False)
     result_summary = db.Column(JSONB, nullable=True)
     detailed_results = db.Column(JSONB, nullable=True)
-    run_time = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    run_time = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
     path = db.Column(db.String(), nullable=False)
     suite = db.relationship("ExpectationSuites", backref="results")
 
