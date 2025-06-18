@@ -2,15 +2,18 @@ from flask import request, send_file
 from flask_restx import Resource, Namespace
 from celery import chain 
 from tasks.task import process_large_file,merge_chunks_task,fetch_file_from_link
-from utils.file_helpers import process_metadata,calculate_file_hash,delete_file_record
+from auth.auth import get_current_username
+from utils.file_helpers import process_metadata,calculate_file_hash,delete_file_record, detect_separator
 from utils.zenoh_file_handler import ZenohFileHandler
 from utils.file_handler import save_file_record,secure_filename,update_file_record_in_db,get_file_record
+from utils.user_file_logger import log_action_with_context
 from swagger_models.file_upload import get_upload_file_url_model, get_upload_file_url_response_model
 from swagger_models.file_update import get_file_update_model
 from parsers.file_parser import single_upload_parser
 import json
 import mimetypes
 import logging
+import datetime
 
 CHUNK_SIZE = 2 * 1024 * 1024  # 2MB per chunk
 UPLOAD_FOLDER = './uploads'
@@ -34,12 +37,14 @@ file_ns = Namespace('file', description='File-related operations')
 upload_file_url_model = get_upload_file_url_model(file_ns)
 upload_file_url_response_model = get_upload_file_url_response_model(file_ns)
 file_update_model = get_file_update_model(file_ns)
+
+
 @file_ns.expect(single_upload_parser)
 @file_ns.route('/upload')
 class SingleFileUploadWithMetadataResource(Resource):
     @file_ns.doc(
         description="Upload a single file with optional JSON metadata file.",
-        security='apikey',
+        security='oauth2',
         consumes=['multipart/form-data'],
         responses={
             200: 'File uploaded successfully',
@@ -49,7 +54,8 @@ class SingleFileUploadWithMetadataResource(Resource):
     )
     def post(self):
         """Upload a file with optional metadata and store in Zenoh, then start metadata processing task."""
-        current_user_id = 'current_user_id_placeholder'  # Replace with actual JWT identity
+
+        username = get_current_username()
 
         # Parse the file upload form
         args = single_upload_parser.parse_args()
@@ -71,6 +77,11 @@ class SingleFileUploadWithMetadataResource(Resource):
         file_parts = original_filename.rsplit('.', 1)
         upload_filename = file_parts[0]
         file_extension = file_parts[1] if len(file_parts) > 1 else ''
+        # Read file content
+        file_content = file.read()
+        separator = None
+        if file_extension.lower() == "csv":
+            separator = detect_separator(file_content)
 
         try:
             file_data = {
@@ -78,9 +89,11 @@ class SingleFileUploadWithMetadataResource(Resource):
                 "upload_filename": original_filename,
                 "description": description,
                 "path": "",
-                "user_id": current_user_id,
+                "user_id": username,
                 "project_id": project_id,
-                "file_metadata": {},
+                "file_metadata": {
+                    "separator": separator
+                },
                 "nft_metadata": {},
                 "use_case": use_case,
                 "file_type": file.file_extension
@@ -91,8 +104,8 @@ class SingleFileUploadWithMetadataResource(Resource):
             final_filename = f"{file_id}.{file_extension}"
             file_path = f"projects/{project_id}/files/{file_id}/{final_filename}"
 
-            # Read file content
-            file_content = file.read()
+
+
             file_size = len(file_content)
 
             # Calculate file hash
@@ -131,8 +144,26 @@ class SingleFileUploadWithMetadataResource(Resource):
                 return {'message': 'Failed to update file record.'}, 500
 
             # 🔥 **Start Metadata Processing Task**
-            metadata_task = process_large_file.delay(file_id)  # Celery task
+            metadata_task = process_large_file.delay(file_id,username)  # Celery task
             metadata_task_id = metadata_task.id  # Get the task ID
+            log_action_with_context(
+                username=username,
+                action_type="upload",
+                file_id=file_id,
+                metadata={
+                    "filename": final_filename,
+                    "upload_filename": upload_filename,
+                    "project_id": project_id,
+                    "upload_method": "single",
+                    "created_at": new_file.created.isoformat() if new_file.created else None,
+                    "file_type": file_extension,
+                    "file_size": file_size,
+                    "file_hash": file_hash,
+                    "zenoh_path": file_path,
+                    "metadata_task_id": metadata_task_id
+                }
+            )
+
 
             # ✅ **Return response with `metadata_task_id`**
             return {
@@ -155,40 +186,44 @@ class SingleFileUploadWithMetadataResource(Resource):
             return {'message': f'Error during file upload: {str(e)}'}, 500
 
 
+
 @file_ns.route('/update/<string:file_id>')
 class FileResource(Resource):
     @file_ns.doc(
         description="Update project_id, description, use_case, filename of a file.",
-        security='apikey',
+        security='oauth2',
         responses={
             200: "File updated successfully",
             400: "No valid fields provided or NFT restriction",
+            403: "You are not authorized to update this file",
             404: "File not found",
             500: "Error updating file"
         },
         params={"file_id": "The ID of the file to update"}
     )
-    @file_ns.expect(file_update_model) 
+    @file_ns.expect(file_update_model)
     def patch(self, file_id):
         """Update project_id, description, use_case, filename"""
         data = request.json
+        username = get_current_username()
+        file = get_file_record(file_id)
 
-        file=get_file_record(file_id)
         if not file:
             return {"message": "File not found"}, 404
 
         if file.nft_metadata:
             return {"message": "File is already registered as NFT, cannot be updated"}, 400
+        
+        if username != file.user_id:
+            return {"message": "You are not authorized to update this file"}, 403
 
-        # Validate use_case if present
+        # Validate use_case
         if "use_case" in data:
-            use_case = data["use_case"]
-            if not isinstance(use_case, list):
+            if not isinstance(data["use_case"], list):
                 return {"message": "use_case must be a list"}, 400
-            file.use_case = use_case
+            file.use_case = data["use_case"]
 
         try:
-            # ✅ Use helper for everything else
             updated_file = update_file_record_in_db(
                 file_id=file_id,
                 path=data.get("path", file.path),
@@ -196,9 +231,19 @@ class FileResource(Resource):
                 file_size=data.get("file_size", file.file_size),
                 file_hash=data.get("file_hash", file.file_hash),
                 uploader_metadata=data.get("uploader_metadata", file.uploader_metadata),
-                filename=secure_filename(data.get("filename",file.filename)),
+                filename=secure_filename(data.get("filename", file.filename)),
                 description=data.get("description", file.description)
             )
+
+            log_action_with_context(
+                username=username,
+                action_type="update",
+                file_id=file_id,
+                metadata={
+                    "fields_updated": list(data.keys())
+                }
+            )
+
 
             return {
                 "message": "File updated successfully",
@@ -207,13 +252,14 @@ class FileResource(Resource):
 
         except Exception as e:
             return {"message": f"Error updating file: {str(e)}"}, 500
+
         
 
 @file_ns.route('/<string:file_id>')    
 class FileDownloadResource(Resource):
     @file_ns.doc(
         description='Download a file by its ID',
-        security='apikey',
+        security='oauth2',
         responses={
             200: 'File downloaded successfully',
             404: 'File not found'
@@ -221,6 +267,7 @@ class FileDownloadResource(Resource):
     )
     def get(self, file_id):
         """Download a file."""
+        username = get_current_username()
         file=get_file_record(file_id)
         if not file:
             return {'message': 'File not found.'}, 404
@@ -233,6 +280,23 @@ class FileDownloadResource(Resource):
         # Detect file MIME type (to serve it properly)
         filename = file_path.split('/')[-1]  # ✅ Extract filename from path
         mime_type, _ = mimetypes.guess_type(filename)  
+        log_action_with_context(
+            username=username,
+            action_type="download",
+            file_id=file_id,
+            metadata={
+                "filename": filename,
+                "file_uploader": file.user_id,
+                "uploaded_at": file.created.isoformat() if file.created else None,
+                "file_type": file.file_type,
+                "project_id": file.project_id,
+                "file_size": file.file_size,
+                "file_hash": file.file_hash,
+                "source": "zenoh"
+            }
+        )
+
+
         return send_file(
             file_content,
             mimetype=mime_type,
@@ -246,15 +310,18 @@ class FileDownloadResource(Resource):
 class FileDeleteResource(Resource):
     @file_ns.doc(
         description='Delete a file by its ID, including Zenoh storage and metadata cleanup.',
-        security='apikey',
+        security='oauth2',
         responses={
             200: 'File deleted successfully',
+            400: 'Cannot delete file due to NFT restriction',
+            403: 'You are not authorized to delete this file',
             404: 'File not found',
             500: 'Failed to delete file'
         }
     )
     def delete(self, file_id):
         """Soft delete a file and remove it from Zenoh if no metadata remains."""
+        username = get_current_username()
         file = get_file_record(file_id)
         if not file:
             return {'message': 'File not found.'}, 404
@@ -262,6 +329,20 @@ class FileDeleteResource(Resource):
             return {'message': 'Cannot delete file. NFT restriction'}, 400
 
         success, error = delete_file_record(file)
+        if not username== file.user_id:
+            return {'message': 'You are not authorized to delete this file.'}, 403
+            
+        log_action_with_context(
+            username=username,
+            action_type="delete",
+            file_id=file.id,
+            metadata={
+                "reason": "user requested",
+                "datetime_requested": datetime.datetime.now().isoformat()
+            }
+)
+
+
         if success:
             return {'message': 'File deleted successfully.'}, 200
         else:
@@ -273,7 +354,7 @@ class FileDeleteResource(Resource):
 class AsyncFileUploadResource(Resource):
     @file_ns.doc(
         description="Upload large file asynchronously in chunks and store each chunk directly in Zenoh.",
-        security='apikey',
+        security='oauth2',
         consumes=['multipart/form-data'],
         responses={
             200: 'Chunk uploaded successfully',
@@ -285,7 +366,7 @@ class AsyncFileUploadResource(Resource):
     @file_ns.expect(single_upload_parser)
     def post(self):
         """Upload a file asynchronously in chunks and store directly in Zenoh."""
-        current_user_id = 'current_user_id_placeholder'  # Replace with actual JWT identity
+        username = get_current_username()
         args = request.files
         file = args.get('file')
         chunk_index = int(request.form.get('chunk_index', 0))
@@ -311,7 +392,7 @@ class AsyncFileUploadResource(Resource):
                     "filename": upload_filename,
                     "upload_filename": upload_filename,
                     "path": "",
-                    "user_id": current_user_id,
+                    "user_id": username,
                     "project_id": project_id,
                     "file_metadata": {},
                     "nft_metadata": {},
@@ -353,7 +434,7 @@ class AsyncFileUploadResource(Resource):
                 )
                 # 🔥 **Trigger Celery merge task**
                 chunk_data_chain=chain(
-                    merge_chunks_task.s(file_id, project_id, total_chunks, final_filename),  
+                    merge_chunks_task.s(file_id, project_id, total_chunks, final_filename, username),  
                     process_large_file.s()
                 ).apply_async()
             else:
@@ -375,7 +456,7 @@ class AsyncFileUploadResource(Resource):
 class UploadFileFromLink(Resource):
     @file_ns.doc(
         description="Retrieve a file from a given link and begin processing.",
-        security='apikey',
+        security='oauth2',
         responses={
             200: ("File retrieved successfully", upload_file_url_response_model),
             400: "Invalid request (file_url and project_id are required)",
@@ -387,7 +468,7 @@ class UploadFileFromLink(Resource):
     @file_ns.marshal_with(upload_file_url_response_model, code=200, mask=False)  # ✅ Response format
     def post(self):
         """Retrieve file from URL and start Celery processing"""
-        current_user_id = 'current_user_id_placeholder'  # Replace with actual JWT identity
+        username = get_current_username()
         data = request.json
         file_url = data.get("file_url")
         project_id = data.get("project_id")
@@ -407,7 +488,7 @@ class UploadFileFromLink(Resource):
                 "upload_filename": filename,
                 "description": description,
                 "path": "",
-                "user_id": current_user_id,
+                "user_id": username,
                 "project_id": project_id,
                 "file_metadata": {},
                 "nft_metadata": {},
@@ -429,7 +510,7 @@ class UploadFileFromLink(Resource):
                 
             # 🔥 Start Celery Chain:
             task_chain = chain(
-                fetch_file_from_link.s(file_url, file_id, zenoh_file_path),
+                fetch_file_from_link.s(file_url, file_id, zenoh_file_path, username),
                 process_large_file.s(),
             ).apply_async()
 
