@@ -8,7 +8,13 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Initialize Zenoh session
-zenoh_session = zenoh.open()
+zenoh_config = zenoh.Config()
+zenoh_config.insert_json5("mode", '"client"')
+zenoh_config.insert_json5("connect/endpoints", os.getenv("ZENOH_ENDPOINTS"))
+
+
+# Open Zenoh session
+zenoh_session = zenoh.open(zenoh_config)
 
 class ZenohFileHandler:
     """Handles file storage and retrieval in Zenoh."""
@@ -121,10 +127,10 @@ def download_file_from_zenoh(file_path, local_path):
     return local_path
 
 
-def save_processed_file(df, file_path, ext):
+def save_processed_file(df, file_path, ext, sep=","):
     temp_path = f"/tmp/{os.path.basename(file_path)}_processed{ext}"
     if ext != ".parquet":
-        df.to_csv(temp_path, index=False)
+        df.to_csv(temp_path, index=False, sep=sep)  # 👈 Use correct separator
     else:
         df.to_parquet(temp_path)
     with open(temp_path, "rb") as f:
