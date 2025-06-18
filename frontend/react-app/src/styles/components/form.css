@@ -52,8 +52,8 @@
 /***********************************FieldPanel Styles**************************************/
 .light-mode .p-inputtext,
 .light-mode .p-multiselect,
-.light-mode .p-calendar {
-  background-color: #fff; 
+.light-mode .p-datepicker {
+  background-color: #ffffff; 
   color: #000;
   border-color: #ccc;
   width: 100%; 
@@ -126,11 +126,9 @@
 
 /***********************************Input & Dropdowns Styles**************************************/
 
-.p-dropdown-panel,
-.dark-mode .p-dropdown-panel.p-dropdown-items {
-  background-color:inherit;
-}
-.dark-mode .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+
+.dark-mode .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight,
+.dark-mode .p-datepicker-header  {
   background-color: inherit; /* Highlight color for selected item */
   color: #fff; /* Text color for selected item */
 }
@@ -140,10 +138,6 @@
   font-weight: 500;
 }
 
-.p-datepicker,
-.p-datepicker-header {  
-  background:inherit;
-}
 
 ul {
   padding-left: 0rem;
