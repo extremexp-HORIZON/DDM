@@ -11,6 +11,7 @@ import mimetypes
 import os
 from tasks.task import run_expectation_suites_task
 from parsers.expectations_parser import expectation_suite_filter_parser 
+from auth.auth import get_current_username
 from dateutil.parser import isoparse
 from sqlalchemy import or_
 
@@ -63,7 +64,7 @@ class UploadSample(Resource):
     @expectations_ns.response(202, 'Accepted')
     def post(self):
         """Uploads a file and starts expectation + description tasks."""
-
+        username=get_current_username()
         if 'file' not in request.files:
             return {"error": "No file uploaded"}, 400
 
@@ -97,7 +98,7 @@ class UploadSample(Resource):
                 "file_type": os.path.splitext(uploaded_file.filename)[1].lower().strip("."),  # ✅ extension
                 "file_size": os.path.getsize(temp_path),
                 "file_hash": None,
-                "user_id": "demo-user-id",
+                "user_id": username,
                 "project_id": suite_name,
                 "created": datetime.now(timezone.utc),
             }
@@ -105,9 +106,10 @@ class UploadSample(Resource):
             saved_file = save_file_record(file_record)
 
             task_chain = chain(
-                build_expectations_task.s(zenoh_path),
+                build_expectations_task.s(zenoh_path, username),
                 build_column_descriptions_task.s()
             ).apply_async()
+
 
             return {
                 "message": "Tasks started",
@@ -127,7 +129,7 @@ class UploadSample(Resource):
 
 
 @expectations_ns.route('/suites')
-@expectations_ns.doc(security='apikey')
+@expectations_ns.doc(security='oauth2')
 class ExpectationSuiteList(Resource):
     @expectations_ns.expect(expectation_suite_filter_parser)
     def get(self):
@@ -194,11 +196,12 @@ class ExpectationSuiteList(Resource):
 
 
     @expectations_ns.expect(e_suite_model)
-    @expectations_ns.doc(security='apikey')
+    @expectations_ns.doc(security='oauth2')
     def post(self):
         """Post a new expectation suite"""
 
         data = request.json
+        username=get_current_username()
 
         try:
             suite, file_record = save_expectation_suite(data)
@@ -207,7 +210,7 @@ class ExpectationSuiteList(Resource):
 
         project_id = data.get("suite_name") or "default"
 
-        task = run_expectation_suites_task.delay(file_record.id, [suite.id])
+        task = run_expectation_suites_task.delay(file_record.id, [suite.id], username)
 
         return {
             "message": "Suite created and validation task started.",
@@ -217,7 +220,7 @@ class ExpectationSuiteList(Resource):
 
 
 @expectations_ns.route('/suites/<string:suite_id>')
-@expectations_ns.doc(security='apikey')
+@expectations_ns.doc(security='oauth2')
 class ExpectationSuiteDetail(Resource):
     def get(self, suite_id):
         """Get details of an expectation suite"""
