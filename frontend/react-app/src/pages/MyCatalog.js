@@ -3,11 +3,14 @@ import { useTheme } from "../context/ThemeContext";
 import { useToast } from "../context/ToastContext"; 
 import CatalogRowExpansion from "../components/CatalogRowExpansion";
 import CatalogFilters from "../components/CatalogFilters";
+import { ConfirmDialog } from "../components/ConfirmDialog";
+
 import { catalogColumns } from "../constants/catalogColumns";
 import { useAllFileTypes } from "../hooks/useAllFileTypes";
 import { useFileActions } from "../hooks/useFileActions";
 import { useMyCatalogData } from "../hooks/useMyCatalogData";
 import { useCatalogCellEditor } from "../hooks/useCatalogCellEditor";
+import { useValidations } from "../hooks/useValidations";
 
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
@@ -18,14 +21,47 @@ import { Column } from "primereact/column";
 import { Button } from "primereact/button"; 
 import { Dialog } from "primereact/dialog";
 
+import { useFileMetadata } from "../hooks/useFileMetadata";
+import { useUploaderMetadata } from "../hooks/useUploaderMetadata";
+import { useValidationResultsByDataset } from "../hooks/useValidationResultsByDataset";
+import JsonDialog from "../components/JsonDialog";
+import ValidateAgainstSuitesDialog from "../components/ValidateAgainstSuitesDialog";
+import ValidationResultsCatalog from "../components/ValidationResultsCatalog";
+import { showMessage } from '../utils/messages';
+
+
 const MyCatalog = () => {
   const { isDarkMode } = useTheme(); 
+  const toast = useToast();
 
+  const [jsonDialogVisible, setJsonDialogVisible] = useState(false);
+  const [jsonDialogTitle, setJsonDialogTitle] = useState("");
+  const [jsonDialogData, setJsonDialogData] = useState(null);
+  const openJsonDialog = (title, data) => {
+    setJsonDialogTitle(title);
+    setJsonDialogData(data);
+    setJsonDialogVisible(true);
+  };
 
+  const { fetchFileMetadata } = useFileMetadata();
+  const { fetchUploaderMetadata } = useUploaderMetadata();
+
+  const {
+    validationResults,
+    fetchValidationResults
+  } = useValidationResultsByDataset(toast);
+
+  const [validationDialogVisible, setValidationDialogVisible] = useState(false);
+  const [currentDatasetName, setCurrentDatasetName] = useState("");
+
+  const [validateDialogVisible, setValidateDialogVisible] = useState(false);
+  const [selectedFileId, setSelectedFileId] = useState(null);
+
+  const { validateFileAgainstSuites } = useValidations();
+  
   const [showAllDialogVisible, setShowAllDialogVisible] = useState(false);
   const [showAllDialogContent, setShowAllDialogContent] = useState('');
 
-  const toast = useToast();
 
   const { 
     fileTypes
@@ -136,13 +172,14 @@ const MyCatalog = () => {
   const { 
     handleDownload, 
     handleDelete, 
-    handleDownloadMultiple
+    handleDownloadMultiple,
+    handleDeleteMultiple
   } = useFileActions(reload);
   
    
   return (
     <div className={`dataset-container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
-      <h2>Catalog</h2>
+      <h2>My Catalog</h2>
       
       {/* Filters Panel */}
       <CatalogFilters 
@@ -151,6 +188,28 @@ const MyCatalog = () => {
         fileTypes={fileTypes}
 
       />
+      <JsonDialog
+        visible={jsonDialogVisible}
+        onHide={() => setJsonDialogVisible(false)}
+        title={jsonDialogTitle}
+        jsonData={jsonDialogData}
+      />
+      <ValidateAgainstSuitesDialog
+        visible={validateDialogVisible}
+        onHide={() => setValidateDialogVisible(false)}
+        onSubmit={(suiteIds) => validateFileAgainstSuites(selectedFileId, suiteIds)}
+        fileId={selectedFileId}
+      />
+
+      <ValidationResultsCatalog
+        visible={validationDialogVisible}
+        onHide={() => setValidationDialogVisible(false)}
+        results={validationResults}
+        datasetName={currentDatasetName}
+      />    
+
+      <ConfirmDialog />
+
       {/* DataTable */}
       <DataTable
         loading={loading}
@@ -190,6 +249,101 @@ const MyCatalog = () => {
       {catalogColumns(onCellEditComplete).map((col, index) => (
         <Column key={index} {...col} />
       ))}
+
+      <Column
+        header="Actions"
+        body={(rowData) => (
+          <div className="flex gap-2">
+            <Button 
+              icon="pi pi-eye" 
+              className="p-button-sm p-button-info p-button-text" 
+              onClick={async () => {
+                try {
+                  const uploaderMetadata = await fetchUploaderMetadata(rowData.id);
+                  openJsonDialog('Uploader Metadata', uploaderMetadata);
+                } catch (error) {
+                  console.error(error);
+                  showMessage(toast, "error", "Failed to fetch uploader metadata.");
+                }
+              }}
+              tooltip="Uploader Metadata" 
+              tooltipOptions={{ position: "top" }}
+            />
+            <Button 
+              icon="pi pi-file" 
+              className="p-button-sm p-button-help p-button-text" 
+              onClick={async () => {
+                try {
+                  const metadata = await fetchFileMetadata(rowData.id);
+                  console.log(metadata);
+                  openJsonDialog('File Metadata', metadata);
+                } catch (error) {
+                  console.error(error);
+                  showMessage(toast, "error", "Failed to fetch file metadata.");
+                }
+              }}
+              tooltip="File Metadata" 
+              tooltipOptions={{ position: "top" }}
+            />
+            <Button
+              icon="pi pi-external-link"
+              className="p-button-sm p-button-secondary p-button-text"
+              tooltip="View Report"
+              tooltipOptions={{ position: "top" }}
+              onClick={() => {
+                window.open(`/report_viewer/${rowData.id}`, '_blank');
+              }}
+            />
+            <Button
+              icon="pi pi-play"
+              className="p-button-sm p-button-success p-button-text"
+              onClick={() => {
+                setSelectedFileId(rowData.id);
+                setValidateDialogVisible(true);
+              }}
+              tooltip="Validate against suite IDs"
+              tooltipOptions={{ position: "top" }}
+            />
+
+            <Button 
+              icon="pi pi-list" 
+              className="p-button-sm p-button-warning p-button-text" 
+              onClick={async () => {
+                try {
+                  await fetchValidationResults(rowData.id);
+                  setCurrentDatasetName(rowData.id || "Unknown Dataset");
+                  setValidationDialogVisible(true);
+                } catch (error) {
+                  console.error(error);
+                  // Error already handled inside the hook
+                }
+              }}
+              tooltip="Validation Results" 
+              tooltipOptions={{ position: "top" }}
+            />
+
+            <Button 
+              icon="pi pi-download" 
+              className="p-button-sm p-button-text"  
+              onClick={() => handleDownload(rowData.id,rowData.filename)} 
+              tooltip="Download file" 
+              tooltipOptions={{ position: "top" }}
+            />
+            <Button 
+              icon="pi pi-trash" 
+              className="p-button-sm p-button-danger p-button-text" 
+              onClick={() => handleDelete(rowData.id)} 
+              tooltip="Delete file" 
+              tooltipOptions={{ position: "top" }}
+            />
+
+          </div>
+        )}
+        frozen
+        alignFrozen="right"
+        style={{ width: "14rem" }}  // ➡ Wider to fit more buttons
+      />
+
 
       </DataTable>
 
@@ -237,6 +391,17 @@ const MyCatalog = () => {
                   .join("\n\n");
                 setShowAllDialogContent(info);
                 setShowAllDialogVisible(true);
+              }}
+            />
+            <Button
+              label={`Delete ${selectedRows.length} File${selectedRows.length > 1 ? "s" : ""}`}
+              icon="pi pi-trash"
+              className="p-button-danger"
+              onClick={() => {
+                handleDeleteMultiple(
+                  selectedRows.map(row => row.id),
+                  () => setSelectedRows(null)  // Clear selection after successful delete
+                );
               }}
             />
           </div>
