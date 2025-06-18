@@ -47,7 +47,7 @@ export const pollFetchTask = async (taskId, fileRef, processTaskId, setFiles, to
 export const pollMetadataTask = async (taskId, fileRef, setFiles, toast) => {
   try {
     const result = await pollTaskResult(taskId, POLL_INTERVAL, MAX_POLL_DURATION);
-    if (!result.profile_html) throw new Error("Missing profile_html");
+    if (!result.profile_html) throw new Error("Report is not available for this file format");
 
     setFiles((prev) =>
       prev.map((file) =>
@@ -69,7 +69,7 @@ export const pollMetadataTask = async (taskId, fileRef, setFiles, toast) => {
       )
     );
   } catch (err) {
-    showMessage(toast, "error", `Metadata fetch failed: ${err.message}`);
+    showMessage(toast, "error", `Report failed.: ${err.message}`);
     setFiles((prev) =>
       prev.map((file) =>
         file.id === fileRef
