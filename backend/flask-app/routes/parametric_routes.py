@@ -9,14 +9,14 @@ parametrics_ns = Namespace('parametrics',path='/parametrics', description='Param
 
 @parametrics_ns.route("/df-supported-file-types")
 class SupportedFileTypes(Resource):
-    @parametrics_ns.doc(security='apikey')
+    @parametrics_ns.doc(security='oauth2')
     def get(self):
         """Returns a list of supported file types for dataframes."""
         return GROUPED_DF_SUPPORTED_EXTENSIONS
     
 
 @parametrics_ns.route("/all-supported-file-types")
-@parametrics_ns.doc(security='apikey')
+@parametrics_ns.doc(security='oauth2')
 class SupportedFileTypes(Resource):
     def get(self):
         """Returns a list of all supported file types."""   
@@ -25,7 +25,7 @@ class SupportedFileTypes(Resource):
 
 
 @parametrics_ns.route('/categorized-expectations')
-@parametrics_ns.doc(security='apikey')
+@parametrics_ns.doc(security='oauth2')
 class CategorizedExpectations(Resource):
     def get(self):
         """Returns all available Great Expectations validation rules categorized by data quality issues."""
@@ -34,7 +34,7 @@ class CategorizedExpectations(Resource):
 
 
 @parametrics_ns.route('/all-expectations')
-@parametrics_ns.doc(security='apikey')
+@parametrics_ns.doc(security='oauth2')
 class AllExpectations(Resource):
     def get(self):
         """Returns a list of all available Great Expectations validation rules with descriptions and arguments."""
@@ -43,7 +43,7 @@ class AllExpectations(Resource):
 
 
 @parametrics_ns.route('/suite-tuples')
-@parametrics_ns.doc(security='apikey')
+@parametrics_ns.doc(security='oauth2')
 class SuiteTuples(Resource):
     def get(self):
         """Get tuples of (id, name, use_case) for dropdowns"""
