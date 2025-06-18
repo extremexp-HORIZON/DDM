@@ -1,5 +1,5 @@
 from langchain_community.llms import Ollama
+from config import Config
 
-# ⚠️ Initialize globally (do NOT do this per request)
-llm = Ollama(model="mistral", base_url="http://ollama:11434")
+llm = Ollama(model=Config.OLLAMA_MODEL, base_url=Config.OLLAMA_BASE_URL)
 
