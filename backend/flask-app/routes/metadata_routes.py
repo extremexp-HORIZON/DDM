@@ -3,6 +3,8 @@ from flask_restx import Resource, Namespace, fields
 from utils.zenoh_file_handler import ZenohFileHandler
 from utils.file_handler import get_file_record, get_file_records_by_ids
 from utils.file_helpers import delete_uploader_metadata_from_zenoh, add_or_update_uploader_metadata
+from utils.user_file_logger import log_action_with_context
+from auth.auth import get_current_username 
 import zipfile
 import datetime
 import os
@@ -28,7 +30,7 @@ generic_model = file_metadata_ns.model('FileMetadataJSON', {
 class FileUploaderMetadataResource(Resource):
     # POST: Attach uploader metadata to a file
     @uploader_metadata_ns.expect(uploader_metadata_model)  # Expect the File model for POST
-    @uploader_metadata_ns.doc(security='apikey')
+    @uploader_metadata_ns.doc(security='oauth2')
     @uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
     @uploader_metadata_ns.response(400, 'Invalid JSON')
     @uploader_metadata_ns.response(404, 'File Not Found')
@@ -47,7 +49,7 @@ class FileUploaderMetadataResource(Resource):
 
     # PUT: Update uploader metadata for a specific file
     @uploader_metadata_ns.expect(uploader_metadata_model)  # Expect the File model for PUT
-    @uploader_metadata_ns.doc(description="Update uploader metadata for a specific file.", security='apikey')
+    @uploader_metadata_ns.doc(description="Update uploader metadata for a specific file.", security='oauth2')
     @uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
     @uploader_metadata_ns.response(400, 'Invalid JSON')
     @uploader_metadata_ns.response(404, 'File Not Found')
@@ -68,7 +70,7 @@ class FileUploaderMetadataResource(Resource):
     # GET: Retrieve uploader metadata for a specific file
     @uploader_metadata_ns.response(200, 'Success', uploader_metadata_model)  # Return the File model in response
     @uploader_metadata_ns.response(404, 'File Not Found')
-    @uploader_metadata_ns.doc(description="Retrieve uploader metadata for a specific file", security='apikey')
+    @uploader_metadata_ns.doc(description="Retrieve uploader metadata for a specific file", security='oauth2')
     def get(self, file_id):
         """Retrieve the uploader_metadata for a specific file."""
         file = get_file_record(file_id)
@@ -95,7 +97,7 @@ class FileUploaderMetadataResource(Resource):
 @file_metadata_ns.route('/<string:file_id>')
 @file_metadata_ns.response(200, 'Success')  
 @file_metadata_ns.response(404, 'File Not Found')
-@file_metadata_ns.doc(description="Retrieve a file's metadata by file id", security='apikey')
+@file_metadata_ns.doc(description="Retrieve a file's metadata by file id", security='oauth2')
 class FileMetadataResource(Resource):
     def get(self, file_id):
         """Retrieve a single file's metadata by ID."""
@@ -110,7 +112,7 @@ class MultipleFileMetadataResource(Resource):
     @file_metadata_ns.expect(file_metadata_ns.model('FileIdsRequest', {
         'file_ids': fields.List(fields.String, required=True, description='List of file IDs to retrieve metadata')
     }))
-    @file_metadata_ns.doc(description="List of file IDs to retrieve metadata", security='apikey')
+    @file_metadata_ns.doc(description="List of file IDs to retrieve metadata", security='oauth2')
 
     def post(self):
         """Retrieve metadata for multiple files by their IDs."""
@@ -127,7 +129,7 @@ class MultipleFileMetadataResource(Resource):
 @file_metadata_ns.expect(file_metadata_ns.model('FileIdsRequest', {
     'file_ids': fields.List(fields.String, required=True, description='List of file IDs to download reports')
 }))
-@file_metadata_ns.doc(description="List of file IDs to download reports", security='apikey')
+@file_metadata_ns.doc(description="List of file IDs to download reports", security='oauth2')
 class FileReportsDownloadResource(Resource):
     
     def post(self):
@@ -167,7 +169,7 @@ class FileReportsDownloadResource(Resource):
 @file_metadata_ns.doc(
     description="Retrieve the HTML profile report for a single file.",
     params={'file_id': 'ID of the file to retrieve the report for'},
-    security='apikey',
+    security='oauth2',
     responses={
         200: 'HTML report retrieved successfully',
         404: 'Report not found',
@@ -178,6 +180,7 @@ class SingleFileReportResource(Resource):
     def get(self, file_id):
         """Retrieve the HTML profile report for a single file."""
         file = get_file_record(file_id)
+        username = get_current_username()
         if not file:
             return {'message': 'File not found'}, 404
 
@@ -187,6 +190,15 @@ class SingleFileReportResource(Resource):
 
             if file_content is None:
                 return {'message': 'Report not found in Zenoh'}, 404
+            log_action_with_context(
+                username=username,
+                action_type="view_report",
+                file_id=file_id,
+                metadata={
+                    "project_id": file.project_id,
+                    "report_path": zenoh_report_path
+                }
+            )
 
             # ✅ Return as raw HTML string response
             return Response(file_content, mimetype='text/html')
