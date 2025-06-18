@@ -6,6 +6,7 @@ from parsers.expectations_parser import validation_results_filter_parser
 from dateutil.parser import isoparse
 from sqlalchemy import or_
 from models.expectations import ValidationResults
+from auth.auth import get_current_username
 
 def split_values(value):
     return [v.strip() for v in value.split(',')] if value else []
@@ -37,10 +38,10 @@ validate_file_against_suites_model = validations_ns.model('ValidateFileAgainstSu
 
 
 @validations_ns.route('/results')
-@validations_ns.doc(security='apikey')
+@validations_ns.doc(security='oauth2')
 class ValidationResultsList(Resource):
     @validations_ns.expect(result_model)
-    @validations_ns.doc(security='apikey')
+    @validations_ns.doc(security='oauth2')
     def post(self):
         """Save the result of an expectation suite validation on a dataset"""
         data = request.json
@@ -49,7 +50,7 @@ class ValidationResultsList(Resource):
         db.session.commit()
         return {'message': 'Result saved', 'id': result.id}, 201
 
-    @validations_ns.doc(security='apikey')
+    @validations_ns.doc(security='oauth2')
     @validations_ns.expect(validation_results_filter_parser)
     def get(self):
         """Get all validation results with filters"""
@@ -132,7 +133,7 @@ class ValidationResultsList(Resource):
 
 @validations_ns.route('/results/<string:result_id>')
 class ExpectationResultDetail(Resource):
-    @validations_ns.doc(security='apikey')
+    @validations_ns.doc(security='oauth2')
     def get(self, result_id):
         """Get a detailed result entry"""
         result = ValidationResults.query.get_or_404(result_id)
@@ -143,11 +144,13 @@ class ExpectationResultDetail(Resource):
 @validations_ns.route('/validate/files-against-suite')
 class ValidateFilesAgainstSuite(Resource):
     @validations_ns.expect(validate_files_against_suite_model)
-    @validations_ns.doc(security='apikey')
+    @validations_ns.doc(security='oauth2')
     @validations_ns.response(202, 'Validation tasks started')
     @validations_ns.doc(description="Validate multiple files against a single expectation suite.")
     def post(self):
         """Validate multiple files against a single expectation suite."""
+        username = get_current_username()  
+
         data = request.json
         suite_id = data.get("suite_id")
         file_ids = data.get("file_ids", [])
@@ -163,7 +166,7 @@ class ValidateFilesAgainstSuite(Resource):
             if existing:
                 already_validated.append(file_id)
             else:
-                task = run_expectation_suites_task.delay(file_id, [suite_id])
+                task = run_expectation_suites_task.delay(file_id, [suite_id], username)
                 tasks.append({
                     "file_id": file_id,
                     "task_id": task.id
@@ -185,11 +188,12 @@ class ValidateFilesAgainstSuite(Resource):
 @validations_ns.route('/validate/file-against-suites')
 class ValidateFileAgainstSuites(Resource):
     @validations_ns.expect(validate_file_against_suites_model)
-    @validations_ns.doc(security='apikey')
+    @validations_ns.doc(security='oauth2')
     @validations_ns.response(202, 'Validation task started')
     @validations_ns.doc(description="Validate a single file against multiple expectation suites.")
     def post(self):
         """Validate a single file against multiple expectation suites."""
+        username = get_current_username()
         data = request.json
         file_id = data.get("file_id")
         suite_ids = data.get("suite_ids", [])
@@ -197,15 +201,26 @@ class ValidateFileAgainstSuites(Resource):
         if not file_id or not suite_ids:
             return {"error": "Both file_id and suite_ids are required."}, 400
 
-        # 🛡️ Check if ValidationResults already exist
-        existing = ValidationResults.query.filter_by(dataset_id=file_id).first()
-        if existing:
-            return {"error": "Validation results already exist for this file."}, 409  
+        # 🛡️ Check for existing validation results for any of the suite_ids
+        existing_results = (
+            ValidationResults.query
+            .filter(ValidationResults.dataset_id == file_id,
+                    ValidationResults.suite_id.in_(suite_ids))
+            .all()
+        )
+
+        if existing_results:
+            existing_suite_ids = [res.suite_id for res in existing_results]
+            return {
+                "error": "Validation results already exist for some suites.",
+                "existing_suite_ids": existing_suite_ids
+            }, 409
 
         # ✅ No results yet — proceed with task
-        task = run_expectation_suites_task.delay(file_id, suite_ids)
+        task = run_expectation_suites_task.delay(file_id, suite_ids, username)
 
         return {
             "message": f"Started validation for file {file_id} against {len(suite_ids)} suite(s).",
             "task_id": task.id
         }, 202
+
