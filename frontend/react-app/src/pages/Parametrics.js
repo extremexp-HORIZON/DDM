@@ -11,7 +11,7 @@ const Parametrics = () => {
 
   return (
     <div className={`dataset-container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
-      <div className="flex items-center gap-2 ms-4">
+      <div className="flex items-center gap-2 m-4">
         <span className={`text-sm font-medium ${showAllFormats ? "" : "text-gray-400 opacity-60"}`}>
           All 
         </span>
