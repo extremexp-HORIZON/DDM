@@ -13,6 +13,7 @@ export const CATALOG_API = {
     });
     return response.data;
   },
+  
   fetchMyCatalog: async (params = {}) => {
     const response = await axios.get(`${BASE_URL}/catalog/my-catalog`, {
       params,
@@ -22,5 +23,29 @@ export const CATALOG_API = {
       },
     });
     return response.data;
-  }
+  },
+
+  fetchFileOptions: async (params = {}) => {
+      const response = await axios.get(`${BASE_URL}/catalog/options`, {
+        params,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      return response.data;
+    },
+
+
+  fetchTree: async (params = {}) => {
+    const response = await axios.get(`${BASE_URL}/catalog/tree`, {
+      params,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    return response.data;
+  },
+  
 };
