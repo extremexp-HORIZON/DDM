@@ -1,7 +1,8 @@
 import eventlet
 eventlet.monkey_patch()
 from dotenv import load_dotenv
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, request, jsonify
+from auth.auth import userAuthHandler, ensure_user_exists
 from celery import Celery, Task
 from extensions.db import db
 from extensions.api import api
@@ -14,6 +15,7 @@ from routes.catalog import catalog_ns
 from routes.expectation_routes import expectations_ns
 from routes.validation_routes import validations_ns
 from routes.parametric_routes import parametrics_ns
+from routes.user_routes import user_ns
 from flask_cors import CORS
 from flask_migrate import Migrate
 
@@ -33,14 +35,26 @@ def create_app(config_object="config.Config"):
     """Create and configure the Flask app."""
     # Initialize Flask app
     app = Flask(__name__)
-    CORS(app, origins="*")  # Allow Cross-Origin Requests
+    CORS(app, allow_headers=["Content-Type", "Authorization", "User-Agent", "Accept"],
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            allow_origins=["*"]
+        ) 
 
-    blueprint = Blueprint('api', __name__,
-                      static_url_path='/ddm/swaggerui',
-                      url_prefix='/ddm',
-                      root_path='/ddm')
+    blueprint = Blueprint('api', __name__)
     app.register_blueprint(blueprint)
-    
+
+    authorizations = {
+        'oauth2': {
+            'type': 'oauth2',
+            'flow': 'password',
+            'authorizationUrl':'https://extremexp-auth01.tbm.tudelft.nl/auth/realms/extremexp/protocol/openid-connect/token',
+            'scopes': {
+                'openid': 'openid',
+            },
+            'description': 'Login with username and password to obtain access token.'
+        }
+    }
+
 
     # Load configuration
     app.config.from_object(config_object)
@@ -61,8 +75,10 @@ def create_app(config_object="config.Config"):
         version="1.0",
         title="Extreme XP Decentralized Data Management Swagger Documentation",
         description="API for Extreme XP Decentralized Data Management and File Catalog",
-        doc='/ddm',
-        prefix='/ddm',
+        doc='/swagger',
+        authorizations=authorizations,
+        security='oauth2'
+        
     )
 
     # Register Namespaces
@@ -74,12 +90,11 @@ def create_app(config_object="config.Config"):
     api.add_namespace(expectations_ns, path='/ddm/expectations')
     api.add_namespace(validations_ns, path='/ddm/validations')
     api.add_namespace(parametrics_ns, path='/ddm/parametrics')
-
+    api.add_namespace(user_ns, path="/ddm/users")
 
 
     # Create database tables if they don't exist
     with app.app_context():
-
         db.create_all()
 
         from routes.task_routes import view_tasks_bp
@@ -97,6 +112,31 @@ def create_app(config_object="config.Config"):
     celery_app.conf.timezone = 'UTC'  # Adjust this if you want a different timezone
     wait_for_ollama_ready()
     ensure_mistral_loaded()
+
+    @app.before_request
+    def global_auth():
+        # Allowlist public endpoints
+        public_paths = [
+            "/swagger", "/ddm/extreme_auth/api/v1/person/login", "/health"
+        ]
+        if request.path.startswith(tuple(public_paths)):
+            return
+
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return jsonify({"error": "Missing token"}), 401
+
+        result = userAuthHandler.verify_user(auth_header)
+        if not result["valid"]:
+            return jsonify({"error": "Unauthorized", "type": result["error_type"]}), 401
+
+        user_info = result["user_info"]
+        user = ensure_user_exists(user_info)
+
+        from flask import g
+        g.current_username = user.username
+
+
     return app
 
 
