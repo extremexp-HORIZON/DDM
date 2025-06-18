@@ -1,0 +1,4 @@
+.p-tree .p-treenode-children {
+  list-style: none;
+  padding-left: 1rem; /* keep your indent */
+}
