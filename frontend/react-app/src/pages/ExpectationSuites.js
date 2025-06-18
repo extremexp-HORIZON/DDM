@@ -198,6 +198,22 @@ const ExpectationSuites = () => {
                 tooltip="Download file"
                 tooltipOptions={{ position: "top" }}
               />
+              <Button
+                icon="pi pi-copy"
+                className="p-button-sm p-button-secondary p-button-text"
+                onClick={() => {
+                  navigator.clipboard.writeText(rowData.id)
+                    .then(() => {
+                      // Optional: toast or feedback
+                      console.log("ID copied:", rowData.id);
+                    })
+                    .catch((err) => {
+                      console.error("Failed to copy:", err);
+                    });
+                }}
+                tooltip="Copy ID"
+                tooltipOptions={{ position: "top" }}
+              />
             </div>
           )}
           frozen
