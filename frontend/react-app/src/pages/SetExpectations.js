@@ -110,6 +110,23 @@ const SetExpectations = () => {
     suiteName: useCase.name
   });
 
+  const canProceedToStep = (stepIndex) => {
+    switch (stepIndex) {
+      case 0:
+        return useCase.name.trim() !== '' && selectedFileTypes.length > 0;
+      case 1:
+        return (
+          datasetId !== null &&
+          (selectedExpectations.length > 0 || tableExpectations.length > 0)
+        );
+      case 2:
+        return !loadingDescriptions; // LLM must be done
+      default:
+        return true;
+    }
+  };
+
+
   const stepComponents = [
     <StepUseCaseDetails
       useCase={useCase}
@@ -165,7 +182,14 @@ const SetExpectations = () => {
 
             <div className="button-group">
                 {activeIndex > 0 && <Button label="Back" onClick={() => setActiveIndex(prev => prev - 1)} />}
-                {activeIndex < steps.length - 1 && <Button label="Next" onClick={() => setActiveIndex(prev => prev + 1)} />}
+                {activeIndex < steps.length - 1 && (
+                    <Button
+                      label="Next"
+                      onClick={() => setActiveIndex(prev => prev + 1)}
+                      disabled={!canProceedToStep(activeIndex)}
+                    />
+                  )}
+
             </div>
         </div>
 
