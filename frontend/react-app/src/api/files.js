@@ -156,6 +156,36 @@ export const FILES_API = {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+  },
+
+
+  downloadProjectFiles: async (projectId) => {
+    const response = await axios.post(
+      `${BASE_URL}/files/download/project`,
+      { project_id: projectId },
+      {
+        responseType: "blob", // Important for downloading ZIP
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      }
+    );
+
+    const blob = new Blob([response.data], { type: "application/zip" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    const disposition = response.headers["content-disposition"];
+    const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
+    const filename = filenameMatch?.[1] || `project_${projectId.replace(/\//g, "_")}.zip`;
+
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   }
+
   
 };
