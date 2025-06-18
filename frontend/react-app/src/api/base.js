@@ -1,5 +1,7 @@
-export const BASE_URL = "http://127.0.0.1/ddm";
-export const BASE_AUTH_URL = "http://127.0.0.1:5521";
+const BASE_URL = window?.APP_CONFIG?.BASE_URL ;
+const BASE_AUTH_URL = window?.APP_CONFIG?.BASE_AUTH_URL;
+
+export { BASE_URL, BASE_AUTH_URL };
 
 export const defaultHeaders = {
   json: {
