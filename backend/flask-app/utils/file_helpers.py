@@ -11,6 +11,8 @@ import requests
 from utils.zenoh_file_handler import *
 from sqlalchemy.exc import SQLAlchemyError
 from utils.file_handler import get_file_records_by_ids 
+import csv
+from copy import deepcopy
 
 SUPPORTED_TEXT_FORMATS = [".csv", ".txt", ".parquet"]
 SUPPORTED_IMAGE_FORMATS = [".jpg", ".jpeg", ".png", ".tiff", ".bmp", ".gif"]
@@ -105,7 +107,7 @@ def delete_files_by_ids(file_ids):
         logger.error(f"❌ DB commit failed during delete: {str(e)}")
         return None, f"Database error: {str(e)}"
 
-    
+
 
 def delete_uploader_metadata_from_zenoh(file):
     """Delete only uploader metadata from Zenoh and clear it in the DB."""
@@ -123,6 +125,7 @@ def delete_uploader_metadata_from_zenoh(file):
         return False, f"DB error: {str(e)}"
 
     return metadata_deleted, None
+
 
 def add_or_update_uploader_metadata(file, uploader_metadata):
     """
@@ -227,3 +230,65 @@ def process_metadata(metadata_file):
     except Exception as e:
         logger.error(f"Failed to parse metadata file: {str(e)}")
         raise Exception("Invalid metadata file format.")
+    
+
+def detect_separator(content_bytes):
+    try:
+        sample = content_bytes.decode('utf-8-sig', errors='ignore')[:2048]
+        return csv.Sniffer().sniff(sample).delimiter
+    except Exception:
+        return ','  # fallback to comma
+
+
+
+def deep_merge_dicts(a: dict, b: dict) -> dict:
+    """Recursively merge dict b into dict a."""
+    result = deepcopy(a)
+    for key, value in b.items():
+        if isinstance(value, dict) and key in result and isinstance(result[key], dict):
+            result[key] = deep_merge_dicts(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+def merge_metadata(file_record, summary_json):
+    logger.debug(f"📥 Raw summary_json: {summary_json}")
+
+    # Step 1: Parse summary_json
+    if isinstance(summary_json, str):
+        try:
+            summary_json = json.loads(summary_json)
+            logger.debug("✅ Parsed summary_json into dict.")
+        except json.JSONDecodeError as e:
+            logger.warning(f"⚠️ Invalid summary_json JSON: {e}")
+            return
+
+    if not isinstance(summary_json, dict):
+        logger.warning(f"❌ summary_json is not a dict. Type: {type(summary_json)}")
+        return
+
+    # Step 2: Parse existing file_metadata
+    db_metadata = file_record.file_metadata
+    if isinstance(db_metadata, str):
+        try:
+            db_metadata = json.loads(db_metadata)
+            logger.debug("✅ Parsed file_record.file_metadata into dict.")
+        except json.JSONDecodeError as e:
+            logger.warning(f"⚠️ Invalid DB metadata JSON: {e}")
+            db_metadata = {}
+
+    if not isinstance(db_metadata, dict):
+        logger.warning("⚠️ DB metadata is not a dict. Resetting to empty.")
+        db_metadata = {}
+
+    # Step 3: Merge
+    merged_metadata = deep_merge_dicts(db_metadata, summary_json)
+    logger.debug(f"🔁 Merged metadata: {merged_metadata}")
+
+    # Step 4: Save back to DB
+    file_record.file_metadata = merged_metadata
+    try:
+        db.session.commit()
+        logger.info(f"✅ File metadata updated in DB for file ID: {file_record.id}")
+    except Exception as e:
+        logger.error(f"❌ Failed to commit merged metadata to DB: {e}")
