@@ -35,6 +35,26 @@ def get_file_records_by_ids(file_ids):
 
     return records, None
 
+def get_files_by_project_path(project_id_prefix):
+    """
+    Get all files where project_id starts with the given prefix.
+    Returns (files, error).
+    """
+    if not project_id_prefix:
+        return None, "No project_id provided."
+
+    try:
+        records = File.query.filter(File.project_id.like(f"{project_id_prefix}%")).all()
+        records = [f for f in records if f and getattr(f, 'path', None)]
+    except Exception as e:
+        return None, f"Query failed: {str(e)}"
+
+    if not records:
+        return None, f"No files found under project path: {project_id_prefix}"
+
+    return records, None
+
+
 
 
 def save_file_record(file_data):
