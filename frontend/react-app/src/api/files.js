@@ -66,19 +66,19 @@ export const FILES_API = {
     const response = await fetch(`${BASE_URL}/file/upload/async`, {
       method: "POST",
       body: formData,
-    }, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
     });
-  
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || "Upload failed");
     }
-  
+
     return response.json();
   },
+
   
   downloadFile: async (fileId, fallbackFilename = "downloaded_file") => {
     const response = await axios.get(`${BASE_URL}/file/${fileId}`, {
