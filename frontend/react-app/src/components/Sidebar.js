@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 import { Avatar } from "primereact/avatar";
@@ -19,7 +19,7 @@ import "primeicons/primeicons.css";
 
 const CustomSidebar = ({isOpen, setIsOpen}) => {
 
-  const { isAvailable, wallet, connect, disconnect, balance, error } = useMetamaskContext();
+  const { isAvailable, wallet, connect, disconnect, balance } = useMetamaskContext();
 
   const { isDarkMode, toggleTheme } = useTheme();
   const { authenticated, user } = useAuth();
