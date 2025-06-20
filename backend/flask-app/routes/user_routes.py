@@ -51,6 +51,7 @@ from flask import send_from_directory
 
 @user_ns.route('/user/profile_pic/<string:filename>')
 class UserProfilePictureResource(Resource):
+    @user_ns.doc(description="Serve uploaded profile picture", security='oauth2')
     def get(self, filename):
         """Serve uploaded profile picture"""
         return send_from_directory(UPLOAD_FOLDER, filename)
