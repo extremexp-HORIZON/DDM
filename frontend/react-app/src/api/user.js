@@ -1,6 +1,6 @@
 // src/api/user.js
 import axios from "axios";
-import { BASE_URL, defaultHeaders } from "./base";
+import { BASE_URL } from "./base";
 
 export const USER_API = {
   // Fetch a single user's profile by username
