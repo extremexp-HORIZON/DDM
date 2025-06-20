@@ -27,17 +27,6 @@ const ExploreProjectsTable = () => {
  const loadNodes = async (parentKey = null, page = 0, rows = 10) => {
     setLoading(true);
 
-    const updateTreeWithChildren = (tree, parentKey, children) => {
-      return tree.map((node) => {
-        if (node.key === parentKey) {
-          return { ...node, children }; // inject children here
-        }
-        if (node.children) {
-          return { ...node, children: updateTreeWithChildren(node.children, parentKey, children) };
-        }
-        return node;
-      });
-    };
 
     const injectChildren = (nodes, parentKey, children) => {
       console.log("Injecting into:", parentKey, "children:", children);
@@ -60,8 +49,6 @@ const ExploreProjectsTable = () => {
     };
 
 
-
-
     try {
       const cleanedFilters = {};
       Object.entries(filters).forEach(([key, { value }]) => {
@@ -72,8 +59,6 @@ const ExploreProjectsTable = () => {
       });
 
       
-
-
       const sort = sortField
         ? `${sortField.replace('data.', '')},${sortOrder > 0 ? 'asc' : 'desc'}`
         : undefined;
@@ -114,21 +99,16 @@ const ExploreProjectsTable = () => {
   }, [first, filters, sortField, sortOrder]);
 
 
-
   const onPage = (e) => {
     setFirst(e.first);
     setRows(e.rows); // update page size if user changes it
   };
-
-
 
   const onExpand = (e) => {
     const rawKey = e.node.key;
     loadNodes(rawKey);
     setExpandedKeys((prev) => ({ ...prev, [rawKey]: true }));
   };
-
-
 
   const onFilter = (e) => {
     setFilters(e.filters);
@@ -140,8 +120,6 @@ const ExploreProjectsTable = () => {
     setSortOrder(e.sortOrder);
     setFirst(0);
   };
-
-  const tableClass = isDarkMode ? "p-datatable p-datatable-dark" : "p-datatable p-datatable-light";
 
   return (
     <div className={`dataset-container ${isDarkMode ? "dark-mode" : "light-mode"}`}>
@@ -273,12 +251,14 @@ const ExploreProjectsTable = () => {
                 className="p-button-text p-button-sm"
                 onClick={handleDownload}
                 tooltip="Download"
+                tooltipOptions={{ position: 'top' }}
               />
               <Button
                 icon="pi pi-trash"
                 className="p-button-text p-button-sm text-red-500 hover:text-red-600"
                 onClick={handleDelete}
                 tooltip="Delete"
+                tooltipOptions={{ position: 'top' }}
               />
             </div>
           );
