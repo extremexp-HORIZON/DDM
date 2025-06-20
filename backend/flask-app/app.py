@@ -96,19 +96,12 @@ def create_app(config_object="config.Config"):
     # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
-
         from routes.task_routes import view_tasks_bp
         from tasks.task import fetch_file_from_link,merge_chunks_task,process_large_file,build_expectations_task, build_column_descriptions_task
 
 
     app.register_blueprint(view_tasks_bp)
     celery_app = app.extensions['celery']
-    celery_app.conf.beat_schedule = {
-        'check-discord-every-5-minutes': {
-            'task': 'tasks.check_discord_chilli',  # Update with your actual task path
-            'schedule': 30.0,  # 300 seconds = 5 minutes
-        },
-    }
     celery_app.conf.timezone = 'UTC'  # Adjust this if you want a different timezone
     wait_for_ollama_ready()
     ensure_mistral_loaded()
