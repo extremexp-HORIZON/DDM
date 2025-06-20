@@ -51,6 +51,7 @@ def save_expectation_suite(data):
         column_names=column_names,
         category=data.get("category"),
         description=data.get("description"),
+        created=datetime.now(timezone.utc)
     )
 
     db.session.add(suite)
