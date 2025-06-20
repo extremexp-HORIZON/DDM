@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Namespace, Resource, fields
 from celery import chain
-from tasks.task import build_expectations_task, build_column_descriptions_task
+from tasks.task import build_expectations_task, build_column_descriptions_task, process_large_file
 from utils.zenoh_file_handler import ZenohFileHandler
 from models.expectations import ExpectationSuites
 from utils.file_handler import save_file_record
@@ -60,7 +60,7 @@ def detect_file_type(file_path):
 @expectations_ns.route('/upload-sample')
 class UploadSample(Resource):
     @expectations_ns.expect(file_upload_model)
-    @expectations_ns.doc(security='apikey')
+    @expectations_ns.doc(security='oauth2')
     @expectations_ns.response(202, 'Accepted')
     def post(self):
         """Uploads a file and starts expectation + description tasks."""
@@ -110,7 +110,9 @@ class UploadSample(Resource):
                 build_column_descriptions_task.s()
             ).apply_async()
 
+            process_large_file.delay(saved_file.id, username)
 
+            
             return {
                 "message": "Tasks started",
                 "dataset_id": saved_file.id,
