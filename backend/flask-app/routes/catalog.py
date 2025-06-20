@@ -127,12 +127,20 @@ class FileOptionsResource(Resource):
             for f in files
         ]
     
-    
+
 @catalog_ns.route('/tree')
 class FileTreeResource(Resource):
+    @catalog_ns.doc(
+        description="Lazy-load tree data: paginated, filterable, sortable..",
+        security='oauth2',
+        responses={
+            200: 'Files loaded successfully',
+            400: 'Invalid JSON format',
+            500: 'Internal server error'
+        }
+    )
     @catalog_ns.expect(tree_query_parser)
     def get(self):
-        """Lazy-load tree data: paginated, filterable, sortable."""
         args = tree_query_parser.parse_args()
         parent = args.get("parent", "")
         page = args.get("page", 0)
@@ -146,164 +154,88 @@ class FileTreeResource(Resource):
         base_query = File.query.filter(File.recdeleted != True)
         nodes = []
 
+        def apply_sorting(queryset, field, direction):
+            if field == "name":
+                return sorted(queryset, key=lambda n: n["data"]["name"].lower(), reverse=(direction == "desc"))
+            if field == "size":
+                return sorted(queryset, key=lambda n: n["data"].get("size", 0), reverse=(direction == "desc"))
+            return queryset
+
         if not parent:
             subfolder_query = (
                 File.query
                 .with_entities(File.project_id)
                 .filter(File.project_id.isnot(None))
-                .filter(~File.project_id.contains("/"))
                 .filter(File.recdeleted != True)
                 .distinct()
             )
 
-            # Apply filtering to folders
+            all_projects = [p[0] for p in subfolder_query if p[0]]
+            top_folders = {p.split("/")[0] for p in all_projects}
+
             if name_filter or filter_text:
                 keyword = f"%{name_filter or filter_text}%"
-                matching_projects = (
+                matching = (
                     File.query
                     .filter(File.recdeleted != True)
                     .filter(File.filename.ilike(keyword))
                     .with_entities(File.project_id)
                     .all()
                 )
-                # Extract top-level folders
-                top_folders = set(p[0].split("/")[0] for p in matching_projects if p[0])
-                if not top_folders:
-                    return {"nodes": [], "totalRecords": 0}
+                matched_folders = {p[0].split("/")[0] for p in matching if p[0]}
+                top_folders &= matched_folders
 
-                subfolder_query = subfolder_query.filter(File.project_id.in_(top_folders))
+            top_folders = sorted(top_folders)
+            paginated = top_folders[page * perPage:(page + 1) * perPage]
 
-            # Apply sorting
-            if sort:
-                sort_field, direction = sort.split(",")
-                reverse = direction == "desc"
-
-                if sort_field == "name":
-                    nodes.sort(key=lambda n: n["data"]["name"].lower(), reverse=reverse)
-                elif sort_field == "size":
-                    nodes.sort(key=lambda n: n["data"]["size"], reverse=reverse)
-
-            total = len(nodes)
-            paginated_folders = subfolder_query.offset(page * perPage).limit(perPage).all()
-
-            nodes = []
-            for (folder,) in paginated_folders:
-                folder_size = (
-                    File.query
-                    .filter(File.project_id == folder)  # direct files
-                    .filter(File.recdeleted != True)
-                    .with_entities(func.sum(File.file_size))
-                )
-
-                nested_size = (
-                    File.query
-                    .filter(File.project_id.startswith(folder + "/"))  # nested files
-                    .filter(File.recdeleted != True)
-                    .with_entities(func.sum(File.file_size))
-                )
-
-                total_folder_size = (folder_size.scalar() or 0) + (nested_size.scalar() or 0)
-
-
+            for folder in paginated:
+                direct = File.query.filter(File.project_id == folder, File.recdeleted != True).with_entities(func.sum(File.file_size)).scalar() or 0
+                nested = File.query.filter(File.project_id.startswith(folder + "/"), File.recdeleted != True).with_entities(func.sum(File.file_size)).scalar() or 0
                 nodes.append({
                     "key": f"folder-{folder}",
                     "data": {
                         "name": folder,
                         "path": folder,
                         "type": "folder",
-                        "size": total_folder_size or 0
+                        "size": direct + nested
                     },
                     "leaf": False
                 })
-                
+
             if sort:
-                sort_field, direction = sort.split(",")
-                reverse = direction == "desc"
+                field, direction = sort.split(',')
+                nodes = apply_sorting(nodes, field, direction)
 
-                if sort_field == "name":
-                    nodes.sort(key=lambda n: n["data"]["name"].lower(), reverse=reverse)
-                elif sort_field == "size":
-                    nodes.sort(key=lambda n: n["data"]["size"], reverse=reverse)
-            
-            total = subfolder_query.count()
-            paginated_folders = subfolder_query.offset(page * perPage).limit(perPage).all()
+            return {"nodes": nodes, "totalRecords": len(top_folders)}
 
-            return {
-                "nodes": nodes,
-                "totalRecords": total
-            }
-
-
-        # Sub-level: get folder contents
         folder_path = parent.replace("folder-", "")
-        folder_prefix = folder_path + '/'
+        folder_prefix = folder_path + '/' if not folder_path.endswith('/') else folder_path
 
-        # Subfolders
-        subfolder_query = (
+        subfolders_query = (
             File.query
             .with_entities(File.project_id)
-            .filter(File.project_id.startswith(folder_prefix))
-            .filter(File.recdeleted != True)
-            .filter(File.project_id != folder_path)  # prevent self
+            .filter(File.project_id.startswith(folder_prefix), File.project_id != folder_path, File.recdeleted != True)
             .distinct()
         )
 
-        # Filter subfolders (based on immediate child name)
-        if name_filter or filter_text:
-            subfolder_query = subfolder_query.filter(File.project_id.ilike(f"%{name_filter or filter_text}%"))
-
-        # Sort
-        if sort and sort.startswith("name"):
-            direction = sort.split(",")[1]
-            subfolder_query = subfolder_query.order_by(File.project_id.desc() if direction == "desc" else File.project_id.asc())
-
-        subfolders_all = subfolder_query.all()
-
         seen = set()
-        for (subfolder,) in subfolder_query:
-            remainder = subfolder.replace(folder_prefix, "")
-            if "/" not in remainder:
-                continue  # skip flat files
-            relative = remainder.split("/")[0]
-            full_path = folder_prefix + relative
-            if full_path in seen:
+        for (proj,) in subfolders_query:
+            if not proj or not proj.startswith(folder_prefix):
                 continue
-            seen.add(full_path)
+            remainder = proj[len(folder_prefix):]
+            name = remainder.split("/")[0]
+            path = folder_prefix + name
+            if path not in seen:
+                seen.add(path)
+                direct = File.query.filter(File.project_id == path, File.recdeleted != True).with_entities(func.sum(File.file_size)).scalar() or 0
+                nested = File.query.filter(File.project_id.startswith(path + "/"), File.recdeleted != True).with_entities(func.sum(File.file_size)).scalar() or 0
+                nodes.append({
+                    "key": f"folder-{path}",
+                    "data": {"name": name, "path": path, "type": "folder", "size": direct + nested},
+                    "leaf": False
+                })
 
-            if filter_text and filter_text not in relative.lower():
-                continue
-
-            # ✅ Correct folder size (direct + nested)
-            direct_size = (
-                File.query
-                .filter(File.project_id == full_path)
-                .filter(File.recdeleted != True)
-                .with_entities(func.sum(File.file_size))
-                .scalar()
-            )
-            nested_size = (
-                File.query
-                .filter(File.project_id.startswith(full_path + "/"))
-                .filter(File.recdeleted != True)
-                .with_entities(func.sum(File.file_size))
-                .scalar()
-            )
-            folder_size = (direct_size or 0) + (nested_size or 0)
-
-            nodes.append({
-                "key": f"folder-{full_path}",
-                "data": {
-                    "name": relative,
-                    "path": full_path,
-                    "type": "folder",
-                    "size": folder_size
-                },
-                "leaf": False
-            })
-
-        # Files
         file_query = base_query.filter(File.project_id == folder_path)
-
         if filter_text:
             file_query = file_query.filter(File.filename.ilike(f"%{filter_text}%"))
         if name_filter:
@@ -311,7 +243,7 @@ class FileTreeResource(Resource):
         if size_filter:
             file_query = file_query.filter(File.file_size == size_filter)
         if type_filter:
-            file_query = file_query.filter(File.extension.ilike(f"%{type_filter}%"))
+            file_query = file_query.filter(File.file_type.ilike(f"%{type_filter}%"))
 
         if sort:
             sort_field, direction = sort.split(',')
@@ -320,9 +252,7 @@ class FileTreeResource(Resource):
         else:
             file_query = file_query.order_by(File.created.desc())
 
-        total_files = file_query.count()
         files = file_query.offset(page * perPage).limit(perPage).all()
-
         for f in files:
             nodes.append({
                 "key": f"file-{f.id}",
@@ -330,16 +260,13 @@ class FileTreeResource(Resource):
                     "id": f.id,
                     "name": f.filename,
                     "path": f.project_id,
-                    "size": getattr(f, "file_size", "Unknown"),
-                    "type": getattr(f, "extension", "file")
+                    "size": f.file_size,
+                    "type": f.file_type or "file"
                 },
                 "leaf": True
             })
 
-        return {
-            "nodes": nodes,
-            "totalRecords": total_files + len(subfolders_all)
-        }
+        return {"nodes": nodes, "totalRecords": file_query.count() + len(seen)}
 
 
 # Advanced File Query Endpoint (in the catalog namespace)
