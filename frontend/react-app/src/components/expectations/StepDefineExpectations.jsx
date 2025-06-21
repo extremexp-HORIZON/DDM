@@ -86,21 +86,39 @@ const StepDefineExpectations = ({
           return (
             <div key={rule.name} style={{ marginBottom: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <Checkbox
-                  checked={isChecked}
-                  onChange={(e) => {
-                    const checked = e.checked;
-                    if (checked) {
-                      const defaultArgs = (rule.arguments || []).reduce((acc, arg) => {
-                        acc[arg.name] = ruleArgs[arg.name] ?? arg.expected_value ?? "";
-                        return acc;
-                      }, {});
-                      updateExpectation(column, rule.name, true, defaultArgs);
-                    } else {
-                      updateExpectation(column, rule.name, false);
-                    }
-                  }}
-                />
+               <Checkbox
+                checked={isChecked}
+                onChange={(e) => {
+                  const checked = e.checked;
+
+                  if (checked) {
+                    const defaultArgs = (rule.arguments || []).reduce((acc, arg) => {
+                      // Default value
+                      let value = ruleArgs[arg.name] ?? arg.expected_value ?? "";
+
+                      // Inject dynamic column name
+                      if (arg.name === "column") {
+                        value = column;
+                      }
+
+                      // Inject correct column index
+                      if (arg.name === "column_index") {
+                        const colIndex = Object.keys(expectations).indexOf(column);
+                        value = colIndex >= 0 ? colIndex : 0;
+                      }
+
+                      acc[arg.name] = value;
+                      return acc;
+                    }, {});
+
+                    updateExpectation(column, rule.name, true, defaultArgs);
+                  } else {
+                    updateExpectation(column, rule.name, false);
+                  }
+                }}
+              />
+
+
                 <span style={{ flex: 1 }}>
                   {rule.name}
                   <i className="pi pi-info-circle expectation-tooltip" style={{ fontSize: "1rem", cursor: "pointer", marginLeft: "6px" }} data-pr-tooltip={rule.description} />
