@@ -1,1449 +1,1480 @@
-openapi: 3.0.0
+openapi: 3.0.1
 info:
-  title: Extreme XP Decentralized Data Management API
-  version: 1.0.0
-  description: |
-This OpenAPI spec defines endpoints for file management, metadata processing,filtering, expectations, validations, user management, and decentralized data operations including Zenoh-based storage, async upload, and flexible filtering over nested metadata.
-
+  title: Extreme XP Decentralized Data Management Swagger Documentation
+  description: API for Extreme XP Decentralized Data Management and File Catalog
+  version: "1.0"
 servers:
-  - url: http://localhost:5001
-    description: Local Development Server
-
+- url: /
+tags:
+- name: file
+  description: File-related operations
+- name: files
+  description: Multiple File-related operations
+- name: file_metadata
+  description: File-Metadata operations
+- name: uploader_metadata
+  description: File-Uploader Metadata operations
+- name: catalog
+  description: File catalog operations
+- name: expectations
+  description: Operations related to expectations
+- name: validations
+  description: Operations related to validations.
+- name: parametrics
+  description: Parametric Info
+- name: user
+  description: User-related operations
 paths:
-  /file/upload:
+  /ddm/catalog/advanced:
     post:
-      summary: Upload a file with optional metadata
-      tags: [File]
-      security:
-        - oauth2: []
-requestBody:
-  required: true
-  content:
-    multipart/form-data:
-      schema:
-        type: object
-        required:
-          - project_id
-          - file
-        properties:
-          project_id:
-            type: string
-            description: Project ID to associate the file with
-          file:
-            type: string
-            format: binary
-            description: File to be uploaded
-          user_filename:
-            type: string
-            description: Optional user-facing filename
-          description:
-            type: string
-            description: Description or context of the file
-          use_case:
-            type: array
-            description: Use cases or tags for the file
-            items:
-              type: string
-          metadata-file:
-            type: string
-            format: binary
-            description: Optional additional metadata file      responses:
-        '200':
-          description: File uploaded successfully
-        '400':
-          description: No file uploaded or invalid input
-        '500':
-          description: Failed to save file
-
-
-  /file/upload-link:
-    post:
-      summary: Upload file from external URL
-      tags: [File]
-      requestBody:
-  required: true
-  content:
-    application/json:
-      schema:
-        type: object
-        required: [file_url, project_id]
-        properties:
-          file_url:
-            type: string
-            description: URL to download the file from
-          project_id:
-            type: string
-            description: Target project ID for this file
-          description:
-            type: string
-            description: Description of the file
-          use_cases:
-            type: array
-            description: Optional use cases for this file
-            items:
-              type: string
-          metadata:
-            type: object
-            description: Optional nested metadata object
-responses:
-        '200':
-          description: File fetched and processing started
-        '400':
-          description: Invalid input
-        '500':
-          description: Internal server error
-
-  /file/upload/async:
-    post:
-      summary: Upload a large file in chunks (async) and store in Zenoh
-      tags: [File]
-      security:
-        - oauth2: []
-requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              required:
-                - file
-                - chunk_index
-                - total_chunks
-                - filename
-                - project_id
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: A single chunk of the file
-                chunk_index:
-                  type: integer
-                  description: Index of current chunk (starting from 0)
-                total_chunks:
-                  type: integer
-                  description: Total number of chunks for this file
-                filename:
-                  type: string
-                  description: Original filename
-                project_id:
-                  type: string
-                  description: Project ID to associate the file with
-                file_id:
-                  type: string
-                  description: File ID for continuing a previous upload (not required for first chunk)
+      tags:
+      - catalog
+      summary: Supports complex JSON expressions for file filtering
+      description: Supports complex JSON expressions for advanced file filtering.
+      operationId: post_file_advanced_query_resource
       responses:
-        '200':
-          description: Chunk uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  file_id:
-                    type: string
-        '202':
-          description: All chunks received, file merge and metadata processing started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  file_id:
-                    type: string
-                  zenoh_file_path:
-                    type: string
-                  merge_task_id:
-                    type: string
-                  metadata_task_id:
-                    type: string
-                  project_id:
-                    type: string
-        '400':
-          description: Missing file or project ID
-        '500':
+        "200":
+          description: Files filtered successfully
+          content: {}
+        "400":
+          description: Invalid JSON format
+          content: {}
+        "500":
           description: Internal server error
-
-  /file/{file_id}:
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/catalog/list:
     get:
-      summary: Download a file from Zenoh by file ID
-      tags: [File]
-      security:
-        - oauth2: []
+      tags:
+      - catalog
+      summary: Retrieve a paginated list of files with optional filters and sorting
+      description: Retrieve a paginated list of files with optional filters and sorting.
+      operationId: get_file_catalog_resource
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
+      - name: filename
+        in: query
+        description: Filenames
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
             type: string
-          description: The ID of the file to download
+      - name: use_case
+        in: query
+        description: Use Cases
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: project_id
+        in: query
+        description: Project IDs
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: created_from
+        in: query
+        description: Created date from (ISO 8601 format)
+        schema:
+          type: string
+      - name: created_to
+        in: query
+        description: Created date to (ISO 8601 format)
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        description: User IDs
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: file_type
+        in: query
+        description: File Types
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: parent_files
+        in: query
+        description: Parent file IDs/names
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: size_from
+        in: query
+        description: Minimum file size in bytes
+        schema:
+          type: integer
+      - name: size_to
+        in: query
+        description: Maximum file size in bytes
+        schema:
+          type: integer
+      - name: sort
+        in: query
+        description: "Sort format: field,asc|desc"
+        schema:
+          type: string
+          default: "id,asc"
+      - name: page
+        in: query
+        description: Page number
+        schema:
+          type: integer
+          default: 1
+      - name: perPage
+        in: query
+        description: Results per page
+        schema:
+          type: integer
+          default: 10
       responses:
-        '200':
-          description: File downloaded successfully
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        '404':
-          description: File not found in DB or Zenoh
-
-  /file/update/{file_id}:
-    patch:
-      summary: Update metadata (project_id, description, use_case, filename)
-      tags: [File]
+        "200":
+          description: Files retrieved successfully
+          content: {}
+        "400":
+          description: Invalid request parameters
+          content: {}
+        "500":
+          description: Internal server error
+          content: {}
       security:
-        - oauth2: []
+      - oauth2: []
+  /ddm/catalog/my-catalog:
+    get:
+      tags:
+      - catalog
+      summary: Retrieve the catalog of files uploaded by the current user
+      description: Retrieve the catalog of files uploaded by the current user.
+      operationId: get_my_file_catalog_resource
       parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
+      - name: filename
+        in: query
+        description: Filenames
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
             type: string
-          description: The ID of the file to update
+      - name: use_case
+        in: query
+        description: Use Cases
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: project_id
+        in: query
+        description: Project IDs
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: created_from
+        in: query
+        description: Created date from (ISO 8601 format)
+        schema:
+          type: string
+      - name: created_to
+        in: query
+        description: Created date to (ISO 8601 format)
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        description: User IDs
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: file_type
+        in: query
+        description: File Types
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: parent_files
+        in: query
+        description: Parent file IDs/names
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: size_from
+        in: query
+        description: Minimum file size in bytes
+        schema:
+          type: integer
+      - name: size_to
+        in: query
+        description: Maximum file size in bytes
+        schema:
+          type: integer
+      - name: sort
+        in: query
+        description: "Sort format: field,asc|desc"
+        schema:
+          type: string
+          default: "id,asc"
+      - name: page
+        in: query
+        description: Page number
+        schema:
+          type: integer
+          default: 1
+      - name: perPage
+        in: query
+        description: Results per page
+        schema:
+          type: integer
+          default: 10
+      responses:
+        "200":
+          description: User files retrieved successfully
+          content: {}
+        "400":
+          description: Invalid request parameters
+          content: {}
+        "500":
+          description: Internal server error
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/catalog/options:
+    get:
+      tags:
+      - catalog
+      summary: "Retrieve file options based on project ID, filename, or user ID"
+      description: "Retrieve file options based on project ID, filename, or user ID."
+      operationId: get_file_options_resource
+      parameters:
+      - name: project_id
+        in: query
+        schema:
+          type: string
+      - name: name
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Options retrieved successfully
+          content: {}
+        "400":
+          description: Invalid query parameters
+          content: {}
+        "500":
+          description: Internal server error
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/catalog/tree:
+    get:
+      tags:
+      - catalog
+      description: "Lazy-load tree data: paginated, filterable, sortable.."
+      operationId: get_file_tree_resource
+      parameters:
+      - name: parent
+        in: query
+        description: Parent folder path
+        schema:
+          type: string
+      - name: name
+        in: query
+        description: Filter by name
+        schema:
+          type: string
+      - name: size
+        in: query
+        description: Filter by file size (bytes)
+        schema:
+          type: integer
+      - name: type
+        in: query
+        description: Filter by type
+        schema:
+          type: string
+      - name: sort
+        in: query
+        schema:
+          type: string
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: perPage
+        in: query
+        description: Page size
+        schema:
+          type: integer
+          default: 20
+      - name: filter
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Files loaded successfully
+          content: {}
+        "400":
+          description: Invalid JSON format
+          content: {}
+        "500":
+          description: Internal server error
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/expectations/suites:
+    get:
+      tags:
+      - expectations
+      summary: List all expectation suites with filters
+      operationId: get_expectation_suite_list
+      parameters:
+      - name: suite_name
+        in: query
+        description: 'Suite names '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: suite_id
+        in: query
+        description: 'Suite IDs '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: file_types
+        in: query
+        description: 'File Types '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: category
+        in: query
+        description: 'Categories '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: use_case
+        in: query
+        description: 'Use cases '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: user_id
+        in: query
+        description: 'User IDs '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: created_from
+        in: query
+        description: Start datetime (ISO 8601)
+        schema:
+          type: string
+      - name: created_to
+        in: query
+        description: End datetime (ISO 8601)
+        schema:
+          type: string
+      - name: sort
+        in: query
+        description: "Sort: field,asc|desc"
+        schema:
+          type: string
+          default: "created,desc"
+      - name: page
+        in: query
+        description: Page number
+        schema:
+          type: integer
+          default: 1
+      - name: perPage
+        in: query
+        description: Results per page
+        schema:
+          type: integer
+          default: 10
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+    post:
+      tags:
+      - expectations
+      summary: Post a new expectation suite
+      operationId: post_expectation_suite_list
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                project_id:
-                  type: string
-                description:
-                  type: string
-                filename:
-                  type: string
-                use_case:
-                  type: array
-                  items:
-                    type: string
-      responses:
-        '200':
-          description: File updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  updated_data:
-                    type: object
-        '400':
-          description: No valid fields provided or file is NFT-protected
-        '403':
-          description: You are not authorized to update this file
-        '404':
-          description: File not found
-        '500':
-          description: Error updating file
-
-  /file/{file_id}/delete:
-    delete:
-      summary: Soft delete a file (DB + Zenoh cleanup)
-      tags: [File]
-      security:
-        - oauth2: []
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: ID of the file to delete
-      responses:
-        '200':
-          description: File deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-        '400':
-          description: Cannot delete file due to NFT restriction
-        '403':
-          description: You are not authorized to delete this file
-        '404':
-          description: File not found
-        '500':
-          description: Failed to delete file
-
-  /files/upload:
-    post:
-      summary: Upload multiple files with optional JSON metadata
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
+              $ref: '#/components/schemas/ExpectationSuite'
         required: true
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/expectations/suites/{suite_id}:
+    get:
+      tags:
+      - expectations
+      summary: Get details of an expectation suite
+      operationId: get_expectation_suite_detail
+      parameters:
+      - name: suite_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/expectations/upload-sample:
+    post:
+      tags:
+      - expectations
+      summary: Uploads a file and starts expectation + description tasks
+      operationId: post_upload_sample
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUpload'
+        required: true
+      responses:
+        "202":
+          description: Accepted
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/file/update/{file_id}:
+    patch:
+      tags:
+      - file
+      summary: "Update project_id, description, use_case, filename"
+      description: "Update project_id, description, use_case, filename of a file."
+      operationId: patch_file_resource
+      parameters:
+      - name: file_id
+        in: path
+        description: The ID of the file to update
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUpdate'
+        required: true
+      responses:
+        "200":
+          description: File updated successfully
+          content: {}
+        "400":
+          description: No valid fields provided or NFT restriction
+          content: {}
+        "403":
+          description: You are not authorized to update this file
+          content: {}
+        "404":
+          description: File not found
+          content: {}
+        "500":
+          description: Error updating file
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/file/upload:
+    post:
+      tags:
+      - file
+      summary: "Upload a file with optional metadata and store in Zenoh, then start\
+        \ metadata processing task"
+      description: Upload a single file with optional JSON metadata file.
+      operationId: post_single_file_upload_with_metadata_resource
+      parameters:
+      - name: project_id
+        in: query
+        description: Project ID is required for file organization.
+        required: true
+        schema:
+          type: string
+      - name: user_filename
+        in: query
+        description: File Name.
+        schema:
+          type: string
+      - name: description
+        in: query
+        description: File Description.
+        schema:
+          type: string
+      - name: use_case
+        in: query
+        description: Use cases (List).
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
         content:
           multipart/form-data:
             schema:
+              required:
+              - file
               type: object
-              required: [project_id, files]
               properties:
-                project_id:
+                file:
                   type: string
-                  description: Project ID to organise the files
+                  description: A file is required for this upload.
+                  format: binary
+                metadata-file:
+                  type: string
+                  description: JSON metadata file for the file.
+                  format: binary
+        required: true
+      responses:
+        "200":
+          description: File uploaded successfully
+          content: {}
+        "400":
+          description: No file uploaded or invalid metadata or invalid project_id.
+          content: {}
+        "500":
+          description: Failed to save file.
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/file/upload-link:
+    post:
+      tags:
+      - file
+      summary: Retrieve file from URL and start Celery processing
+      description: Retrieve a file from a given link and begin processing.
+      operationId: post_upload_file_from_link
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadFileUrlRequest'
+        required: true
+      responses:
+        "200":
+          description: File retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadFileUrlResponse'
+        "400":
+          description: Invalid request (file_url and project_id are required)
+          content: {}
+        "500":
+          description: Server error
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/file/upload/async:
+    post:
+      tags:
+      - file
+      summary: Upload a file asynchronously in chunks and store directly in Zenoh
+      description: Upload large file asynchronously in chunks and store each chunk
+        directly in Zenoh.
+      operationId: post_async_file_upload_resource
+      parameters:
+      - name: project_id
+        in: query
+        description: Project ID is required for file organization.
+        required: true
+        schema:
+          type: string
+      - name: user_filename
+        in: query
+        description: File Name.
+        schema:
+          type: string
+      - name: description
+        in: query
+        description: File Description.
+        schema:
+          type: string
+      - name: use_case
+        in: query
+        description: Use cases (List).
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+              - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  description: A file is required for this upload.
+                  format: binary
+                metadata-file:
+                  type: string
+                  description: JSON metadata file for the file.
+                  format: binary
+        required: true
+      responses:
+        "200":
+          description: Chunk uploaded successfully
+          content: {}
+        "202":
+          description: File upload completed and merging started!
+          content: {}
+        "400":
+          description: No file uploaded or invalid metadata.
+          content: {}
+        "500":
+          description: Failed to save file.
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/file/{file_id}:
+    get:
+      tags:
+      - file
+      summary: Download a file
+      description: Download a file by its ID
+      operationId: get_file_download_resource
+      parameters:
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: File downloaded successfully
+          content: {}
+        "404":
+          description: File not found
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/file/{file_id}/delete:
+    delete:
+      tags:
+      - file
+      summary: Soft delete a file and remove it from Zenoh if no metadata remains
+      description: "Delete a file by its ID, including Zenoh storage and metadata\
+        \ cleanup."
+      operationId: delete_file_delete_resource
+      parameters:
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: File deleted successfully
+          content: {}
+        "400":
+          description: Cannot delete file due to NFT restriction
+          content: {}
+        "403":
+          description: You are not authorized to delete this file
+          content: {}
+        "404":
+          description: File not found
+          content: {}
+        "500":
+          description: Failed to delete file
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/file_metadata/:
+    post:
+      tags:
+      - file_metadata
+      summary: Retrieve metadata for multiple files by their IDs
+      description: List of file IDs to retrieve metadata
+      operationId: post_multiple_file_metadata_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileIdsRequest'
+        required: true
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/file_metadata/report/{file_id}:
+    get:
+      tags:
+      - file_metadata
+      summary: Retrieve the HTML profile report for a single file
+      description: Retrieve the HTML profile report for a single file.
+      operationId: get_single_file_report_resource
+      parameters:
+      - name: file_id
+        in: path
+        description: ID of the file to retrieve the report for
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: HTML report retrieved successfully
+          content: {}
+        "404":
+          description: Report not found
+          content: {}
+        "500":
+          description: Error retrieving the report
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/file_metadata/reports:
+    post:
+      tags:
+      - file_metadata
+      summary: Retrieve HTML reports for multiple files from Zenoh
+      description: List of file IDs to download reports
+      operationId: post_file_reports_download_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileIdsRequest'
+        required: true
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/file_metadata/{file_id}:
+    get:
+      tags:
+      - file_metadata
+      summary: Retrieve a single file's metadata by ID
+      description: Retrieve a file's metadata by file id
+      operationId: get_file_metadata_resource
+      parameters:
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "404":
+          description: File Not Found
+          content: {}
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/files/delete:
+    delete:
+      tags:
+      - files
+      summary: Delete multiple files with Zenoh cleanup and metadata handling
+      description: Delete multiple files by their IDs
+      operationId: delete_multiple_file_delete_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteFileIds'
+        required: true
+      responses:
+        "200":
+          description: Files deleted successfully
+          content: {}
+        "404":
+          description: One or more files not found
+          content: {}
+        "500":
+          description: Failed to delete files
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/files/download:
+    post:
+      tags:
+      - files
+      summary: Download multiple files as a ZIP archive (Fetched from Zenoh)
+      description: Download multiple files by their IDs from Zenoh Storage
+      operationId: post_multiple_file_download_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DownloadFileIds'
+        required: true
+      responses:
+        "200":
+          description: Files downloaded successfully as a ZIP archive
+          content: {}
+        "400":
+          description: No file IDs provided.
+          content: {}
+        "404":
+          description: One or more files not found in Zenoh.
+          content: {}
+        "500":
+          description: Failed to create ZIP file.
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/files/download/project:
+    post:
+      tags:
+      - files
+      summary: Download all files under a given project path as a ZIP archive
+      description: Download all files under a given project path from Zenoh Storage
+      operationId: post_project_file_download_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectDownloadRequest'
+        required: true
+      responses:
+        "200":
+          description: Files downloaded successfully as a ZIP archive
+          content: {}
+        "400":
+          description: Project ID not provided.
+          content: {}
+        "404":
+          description: No files found under the specified project path.
+          content: {}
+        "500":
+          description: Failed to create ZIP file.
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/files/update:
+    patch:
+      tags:
+      - files
+      summary: Update multiple files
+      description: "Update multiple files project_id, description, use_case, filename\
+        \ at once"
+      operationId: patch_multiple_files_update_resource
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FilesUpdateRequest'
+        required: true
+      responses:
+        "200":
+          description: Files updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FilesUpdateResponse'
+        "400":
+          description: Invalid request (Missing file list)
+          content: {}
+        "403":
+          description: Unauthorized update attempt
+          content: {}
+        "404":
+          description: One or more files not found
+          content: {}
+        "500":
+          description: Server error
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/files/upload:
+    post:
+      tags:
+      - files
+      summary: "Upload multiple files with metadata, store in Zenoh, and start processing\
+        \ tasks"
+      description: Upload many files withe their metadata.
+      operationId: post_multiple_file_upload_resource
+      parameters:
+      - name: project_id
+        in: query
+        description: Project ID is required for organizing uploaded files.
+        required: true
+        schema:
+          type: string
+      - name: user_filenames
+        in: query
+        description: File Name.
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: descriptions
+        in: query
+        description: File Description.
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: use_case
+        in: query
+        description: List of use cases.
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              required:
+              - files
+              type: object
+              properties:
                 files:
                   type: array
-                  description: One or more files to upload
+                  description: The file(s) to upload.
                   items:
-                    type: string
+                    type: file
                     format: binary
                 metadata-files:
                   type: array
+                  description: Optional JSON metadata files for the uploaded files.
                   items:
-                    type: string
+                    type: file
                     format: binary
-                  description: Optional JSON metadata files (one-to-one with `files`)
-                user_filenames:
-                  type: array
-                  items: {type: string}
-                descriptions:
-                  type: array
-                  items: {type: string}
-                use_case:
-                  type: array
-                  items: {type: string}
-      responses:
-        '200': {description: Files uploaded successfully}
-        '400': {description: No files or project_id supplied / invalid metadata}
-        '500': {description: Server error while saving files}
-
-  /files/download:
-    post:
-      summary: Download several files as a ZIP archive (fetched from Zenoh)
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ file_ids]
-              properties:
-                file_ids:
-                  type: array
-                  description: List of file IDs to download
-                  items: {type: string}
-      responses:
-        '200':
-          description: ZIP archive returned
-          content:
-            application/zip:
-              schema: {type: string, format: binary}
-        '400': {description: file_ids missing}
-        '404': {description: One or more IDs not found in Zenoh}
-        '500': {description: ZIP creation failed}
-
-  /files/download/project:
-    post:
-      summary: Download all files under a project path as a ZIP archive
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ project_id ]
-              properties:
-                project_id:
-                  type: string
-                  description: Project path (e.g., folder1/subfolder2)
-      responses:
-        '200':
-          description: ZIP archive returned
-          content:
-            application/zip:
-              schema: {type: string, format: binary}
-        '400': {description: project_id missing}
-        '404': {description: No files found under that path}
-        '500': {description: ZIP creation failed}
-
-  /files/update:
-    patch:
-      summary: Bulk update file metadata (project_id, description, use_case, filename)
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [files]
-              properties:
-                files:
-                  type: array
-                  description: List of file objects to update
-                  items:
-                    type: object
-                    required: [id]
-                    properties:
-                      id: {type: string}
-                      project_id: {type: string}
-                      description: {type: string}
-                      filename: {type: string}
-                      use_case:
-                        type: array
-                        items: {type: string}
-      responses:
-        '200': {description: Files updated successfully}
-        '400': {description: Missing file list or invalid body}
-        '403': {description: One or more files owned by another user}
-        '404': {description: Some file IDs not found}
-        '500': {description: Database update failed}
-
-  /files/delete:
-    delete:
-      summary: Delete multiple files (DB soft-delete + Zenoh cleanup)
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ file_ids]
-              properties:
-                file_ids:
-                  type: array
-                  description: IDs of files to delete
-                  items: {type: string}
-      responses:
-        '200': {description: Files deleted successfully}
-        '400': {description: No file IDs supplied}
-        '403': {description: One or more files owned by another user}
-        '404': {description: IDs not found}
-        '500': {description: Deletion failed}
-
-  /files/upload-links:
-    post:
-      summary: Fetch multiple files from external URLs and start processing
-      tags: [Files]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [ project_id, files]
-              properties:
-                project_id:
-                  type: string
-                files:
-                  type: array
-                  description: List of URLs + optional metadata
-                  items:
-                    type: object
-                    required: [ file_url]
-                    properties:
-                      file_url: {type: string}
-                      filename: {type: string}
-                      description: {type: string}
-                      use_cases:
-                        type: array
-                        items: {type: string}
-                      metadata: {type: object}
-      responses:
-        '202': {description: Retrieval tasks started for each URL}
-        '400': {description: project_id or files array missing}
-        '500': {description: Server error}
-
-  /uploader_metadata/{file_id}:
-    get:
-      summary: Get uploader metadata for a file
-      tags: [Uploader Metadata]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      responses:
-        '200':
-          description: Uploader metadata returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  uploader_metadata:
-                    type: object
-        '404': {description: File not found}
-
-    post:
-      summary: Attach uploader metadata to a file
-      tags: [Uploader Metadata]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                uploader_metadata:
-                  type: object
-      responses:
-        '201': {description: Metadata added successfully}
-        '400': {description: Invalid JSON or update failed}
-        '404': {description: File not found}
-
-    put:
-      summary: Update uploader metadata for a file
-      tags: [Uploader Metadata]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                uploader_metadata:
-                  type: object
-      responses:
-        '200': {description: Metadata updated successfully}
-        '400': {description: Invalid JSON or update failed}
-        '404': {description: File not found}
-
-    delete:
-      summary: Delete uploader metadata from Zenoh
-      tags: [Uploader Metadata]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      responses:
-        '200': {description: Metadata deleted successfully}
-        '404': {description: File not found}
-        '500': {description: Deletion failed}
-
-  /file_metadata/{file_id}:
-    get:
-      summary: Get file metadata by file ID
-      tags: [File Metadata]
-      security: [ {oauth2: []]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      responses:
-        '200':
-          description: File metadata retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-        '404': {description: File not found}
-
-  /file_metadata/:
-    post:
-      summary: Get metadata for multiple files
-      tags: [File Metadata]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [file_ids]
-              properties:
-                file_ids:
-                  type: array
-                  items: {type: string}
-      responses:
-        '200':
-          description: Metadata for multiple files
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  metadata:
-                    type: object
-                    additionalProperties:
-                      type: object
-        '404': {description: No files found}
-
-  /file_metadata/reports:
-    post:
-      summary: Download reports for multiple files as ZIP
-      tags: [File Metadata]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [file_ids]
-              properties:
-                file_ids:
-                  type: array
-                  items: {type: string}
-      responses:
-        '200':
-          description: ZIP of reports returned
-          content:
-            application/zip:
-              schema:
-                type: string
-                format: binary
-        '404': {description: No reports found}
-        '500': {description: ZIP creation failed}
-
-  /file_metadata/report/{file_id}:
-    get:
-      summary: Retrieve single HTML report for a file
-      tags: [File Metadata]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          schema: {type: string}
-      responses:
-        '200':
-          description: HTML report content
-          content:
-            text/html:
-              schema:
-                type: string
-        '404': {description: Report not found}
-        '500': {description: Error retrieving report}
-
-  /catalog/list:
-    get:
-      summary: Retrieve a paginated list of files with optional filters & sorting
-      tags: [Catalog]
-      security: [ {oauth2: []}]
-      parameters:
-        - in: query
-          name: filename
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated list of filenames
-          style: form
-        - in: query
-          name: use_case
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated list of use-cases
-          style: form        - in: query
-          name: project_id
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated project IDs
-          style: form
-        - in: query
-          name: created_from
-          schema: {type: string, format: date-time}
-        - in: query
-          name: created_to
-          schema: {type: string, format: date-time}
-        - in: query
-          name: user_id
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: file_type
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: parent_files
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: size_from
-          schema: {type: integer}
-        - in: query
-          name: size_to
-          schema: {type: integer}
-        - in: query
-          name: sort
-          schema: {type: string, example: "created,desc"}
-          description: "<field>,asc|desc"
-        - in: query
-          name: page
-          schema: {type: integer, default: 1}
-        - in: query
-          name: perPage
-          schema: {type: integer, default: 10}
-      responses:
-        '200':
-          description: Files retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items: {type: object}
-                  total: {type: integer}
-                  filtered_total: {type: integer}
-                  page: {type: integer}
-                  perPage: {type: integer}
-        '400': {description: Invalid request parameters}
-        '500': {description: Internal server error}
-
-/catalog/my-catalog:
-    get:
-      summary: Retrieve catalog for the current user
-      tags: [Catalog]
-      security: [ {oauth2: []} ]
-parameters:
-        - in: query
-          name: filename
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated list of filenames
-          style: form
-        - in: query
-          name: use_case
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated list of use-cases
-          style: form
-        - in: query
-          name: project_id
-          schema: {type: array, items: {type: string}}
-          description: Comma-separated project IDs
-          style: form
-        - in: query
-          name: created_from
-          schema: {type: string, format: date-time}
-        - in: query
-          name: created_to
-          schema: {type: string, format: date-time}
-        - in: query
-          name: user_id
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: file_type
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: parent_files
-          schema: {type: array, items: {type: string}}
-          style: form
-        - in: query
-          name: size_from
-          schema: {type: integer}
-        - in: query
-          name: size_to
-          schema: {type: integer}
-        - in: query
-          name: sort
-          schema: {type: string, example: "created,desc"}
-          description: "<field>,asc|desc"
-        - in: query
-          name: page
-          schema: {type: integer, default: 1}
-        - in: query
-          name: perPage
-          schema: {type: integer, default: 10}
-responses:
-        '200':
-          description: User files retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items: {type: object}
-                  total: {type: integer}
-                  filtered_total: {type: integer}
-                  page: {type: integer}
-                  perPage: {type: integer}
-        '400': {description: Invalid request parameters}
-        '500': {description: Internal server error}
-
-/catalog/options:
-    get:
-      summary: Quick options for dropdowns / autocomplete
-      tags: [Catalog]
-      security: [ {oauth2: []}]
-      parameters:
-        - in: query
-          name: project_id
-          schema: {type: string}
-        - in: query
-          name: filename
-          schema: {type: string}
-        - in: query
-          name: user_id
-          schema: {type: string}
-      responses:
-        '200':
-          description: Option list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id: {type: string}
-                    filename: {type: string}
-                    project_id: {type: string}
-        '400': {description: Invalid query parameters}
-        '500': {description: Internal server error}
-
-  /catalog/tree:
-    get:
-      summary: Lazy-load hierarchical tree of projects & files
-      tags: [Catalog]
-      security: [ {oauth2: []}]
-      parameters:
-        - in: query
-          name: parent
-          schema: {type: string}
-        - in: query
-          name: name
-          schema: {type: string}
-        - in: query
-          name: size
-          schema: {type: integer}
-        - in: query
-          name: type
-          schema: {type: string}
-        - in: query
-          name: filter
-          schema: {type: string}
-        - in: query
-          name: sort
-          schema: {type: string, example: "name,asc"}
-        - in: query
-          name: page
-          schema: {type: integer, default: 0}
-        - in: query
-          name: perPage
-          schema: {type: integer, default: 20}
-      responses:
-        '200':
-          description: Tree nodes
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  nodes:
-                    type: array
-                    items: {type: object}
-                  totalRecords: {type: integer}
-        '400': {description: Invalid parameters}
-        '500': {description: Internal server error}
-
-  /catalog/advanced:
-    post:
-      summary: Advanced nested-metadata filter (JSON rules)
-      tags: [Catalog]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object   # arbitrary rule tree – validated server-side
-      responses:
-        '200':
-          description: Filtered list of files
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id: {type: string}
-                    filename: {type: string}
-                    use_case: {type: array, items: {type: string}}
-                    timestamp: {type: string}
-                    file_metadata: {type: object}
-        '400': {description: Invalid JSON format}
-        '500': {description: Internal server error}
-
-  /expectations/upload-sample:
-    post:
-      summary: Upload a file and trigger expectation/description tasks
-      tags: [Expectations]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
           multipart/form-data:
             schema:
+              required:
+              - files
               type: object
-              required: [file]
               properties:
-                file:
-                  type: string
-                  format: binary
-                suite_name:
-                  type: string
-                  description: Project ID or suite namespace
-      responses:
-        '202':
-          description: Tasks started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: {type: string}
-                  dataset_id: {type: string}
-                  expectation_task_id: {type: string}
-                  description_task_id: {type: string}
-        '400': {description: Bad input (missing file or empty)}
-        '500': {description: Server/storage error}
-
-  /expectations/suites:
-    get:
-      summary: List all expectation suites with optional filters
-      tags: [Expectations]
-      security: [ {oauth2: []}]
-      parameters:
-        - name: suite_name
-          in: query
-          description: Filter by suite name
-          schema: {type: array, items: {type: string}}
-          style: form
-        - name: file_types
-          in: query
-          schema: {type: array, items: {type: string}}
-          style: form
-        - name: category
-          in: query
-          schema: {type: array, items: {type: string}}
-          style: form
-        - name: use_case
-          in: query
-          schema: {type: array, items: {type: string}}
-          style: form
-        - name: user_id
-          in: query
-          schema: {type: array, items: {type: string}}
-          style: form
-        - name: suite_id
-          in: query
-          schema: {type: array, items: {type: string}}
-          style: for        
-- name: created_from
-          in: query
-          schema: {type: string, format: date-time}
-        - name: created_to
-          in: query
-          schema: {type: string, format: date-time}
-        - name: sort
-          in: query
-          schema: {type: string, example: "created,desc"}
-        - name: page
-          in: query
-          schema: {type: integer, default: 1}
-        - name: perPage
-          in: query
-          schema: {type: integer, default: 10}
-      responses:
-        '200':
-          description: List of expectation suites
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items:
-                      type: object
-                  total: {type: integer}
-                  filtered_total: {type: integer}
-                  page: {type: integer}
-                  perPage: {type: integer}
-        '400': {description: Invalid filter input}
-        '500': {description: Internal error}
-
-    post:
-      summary: Create new expectation suite and run validation
-      tags: [Expectations]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [suite_name, file_types, expectations, user_id]
-              properties:
-                suite_name: {type: string}
-                file_types:
+                files:
                   type: array
-                  items: {type: string}
-                expectations:
-                  type: object
-                  description: Great Expectations JSON
-                category: {type: string}
-                description: {type: string}
-                user_id: {type: string}
-                use_case: {type: string}
-      responses:
-        '202':
-          description: Suite created and validation started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: {type: string}
-                  suite_id: {type: string}
-                  task_id: { type: string}
-        '400': {description: Validation error}
-        '500': {description: Internal error}
-
-  /expectations/suites/{suite_id}:
-    get:
-      summary: Get details of a specific expectation suite
-      tags: [Expectations]
-      security: [ {oauth2: []}]
-      parameters:
-        - in: path
-          name: suite_id
-          required: true
-          schema: {type: string}
-      responses:
-        '200':
-          description: Suite detail
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  suite_name: {type: string}
-                  file_types:
-                    type: array
-                    items: {type: string}
-                  expectations: {type: object}
-                  category: {type: string}
-                  description: {type: string}
-                  user_id: {type: string}
-                  created: {type: string, format: date-time}
-        '404': {description: Suite not found}
-
-  /validations/results:
-    post:
-      summary: Save the result of an expectation suite validation
-      tags: [Validations]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [user_id, suite_id, dataset_name]
-              properties:
-  user_id:
-    type: string
-    description: ID of the user who ran the validation
-  suite_id:
-    type: string
-    description: ID of the expectation suite used in validation
-  suite_name:
-    type: string
-    description: Name of the expectation suite (for display)
-  dataset_name:
-    type: string
-    description: Name of the dataset validated
-  result_summary:
-    type: object
-    description: Summary of validation results (e.g., success ratio, failed tests count)
-  detailed_results:
-    type: object
-    description: Full validation result details including individual expectations      
-responses:
-        '201':
-          description: Result saved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: {type: string}
-                  id: {type: string}
-
-    get:
-      summary: Get all validation results with filters
-      tags: [Validations]
-      security: [ {oauth2: []}]
-parameters:
-  - name: dataset_name
-    in: query
-    description: List of dataset names to filter results by
-    schema:
-      type: array
-      items:
-        type: string
-    style: form
-  - name: dataset_id
-    in: query
-    description: List of dataset IDs to filter results by
-    schema:
-      type: array
-      items:
-        type: string
-    style: form
-  - name: user_id
-    in: query
-    description: List of user IDs to filter results by
-    schema:
-      type: array
-      items:
-        type: string
-    style: form
-  - name: suite_id
-    in: query
-    description: List of expectation suite IDs to filter results by
-    schema:
-      type: array
-      items:
-        type: string
-    style: form
-  - name: run_time_from
-    in: query
-    description: Filter results with run_time >= this ISO 8601 datetime
-    schema:
-      type: string
-      format: date-time
-  - name: run_time_to
-    in: query
-    description: Filter results with run_time <= this ISO 8601 datetime
-    schema:
-      type: string
-      format: date-time
-  - name: sort
-    in: query
-    description: Sort format: field,asc|desc (e.g., run_time,desc)
-    schema:
-      type: string
-      example: run_time,desc
-  - name: page
-    in: query
-    description: Page number for pagination
-    schema:
-      type: integer
-      default: 1
-  - name: perPage
-    in: query
-    description: Number of items per page
-    schema:
-      type: integer
-      default: 10
-      responses:
-        '200':
-          description: List of validation results
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: array
-                    items: {type: object}
-                  total: {type: integer}
-                  filtered_total: {type: integer}
-                  page: {type: integer}
-                  perPage: {type: integer}
-        '400': {description: Invalid filter input}
-
-  /validations/results/{result_id}:
-    get:
-      summary: Get a detailed result entry
-      tags: [Validations]
-      security: [ {oauth2: []}]
-      parameters:
-        - in: path
-          name: result_id
-          required: true
-          schema: {type: string}
-      responses:
-        '200':
-          description: Detailed validation result
-          content:
-            application/json:
-              schema:
-                type: object
-        '404': {description: Result not found}
-
-  /validations/validate/files-against-suite:
-    post:
-      summary: Validate multiple files against a single expectation suite
-      tags: [Validations]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [suite_id, file_ids]
-              properties:
-                suite_id: {type: string}
-                file_ids:
-                  type: array
-                  items: {type: string}
-      responses:
-        '202':
-          description: Validation tasks started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: {type: string}
-                  tasks:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        file_id: {type: string}
-                        task_id: {type: string}
-        '400': {description: suite_id and file_ids are required}
-        '409': 
-          description: Some files already validated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error: {type: string}
-                  already_validated_file_ids:
-                    type: array
-                    items: {type: string}
-
-  /validations/validate/file-against-suites:
-    post:
-      summary: Validate a single file against multiple expectation suites
-      tags: [Validations]
-      security: [ {oauth2: []}]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [file_id, suite_ids]
-              properties:
-                file_id: {type: string}
-                suite_ids:
-                  type: array
-                  items: {type: string}
-      responses:
-        '202':
-          description: Validation task started
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message: {type: string}
-                  task_id: {type: string}
-        '400': {description: file_id and suite_ids required}
-        '409':
-          description: Validation already exists
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error: {type: string}
-                  existing_suite_ids:
-                    type: array
-                    items: {type: string}
-
-  /parametrics/df-supported-file-types:
-    get:
-      summary: List supported file types for DataFrames
-      tags: [Parametrics]
-      security: [ {oauth2: []}]
-      responses:
-        '200':
-          description: Supported DataFrame file types
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  csv: [".csv"]
-                  excel: [".xls", ".xlsx"]
-                  parquet: [".parquet"]
-
-  /parametrics/all-supported-file-types:
-    get:
-      summary: List all supported file types
-      tags: [Parametrics]
-      security: [ {oauth2: []}]
-      responses:
-        '200':
-          description: All supported file types
-          content:
-            application/json:
-              schema:
-                type: object
-                example:
-                  text: [".txt", ".log"]
-                  archive: [".zip", ".tar.gz"]
-                  data: [".csv", ".json", ".xlsx"]
-
-  /parametrics/categorized-expectations:
-    get:
-      summary: Get categorized validation rules
-      tags: [Parametrics]
-      security: [ { oauth2: [] } ]
-      responses:
-        '200':
-          description: Categorized Great Expectations rules
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties:
-                  type: array
+                  description: The file(s) to upload.
                   items:
-                    type: object
-                    properties:
-                      name: {type: string}
-                      description: {type: string}
-                      args: {type: array, items: {type: string}}
-
-  /parametrics/all-expectations:
-    get:
-      summary: Get all available expectations
-      tags: [Parametrics]
-      security: [ {oauth2: []}]
+                    type: file
+                    format: binary
+                metadata-files:
+                  type: array
+                  description: Optional JSON metadata files for the uploaded files.
+                  items:
+                    type: file
+                    format: binary
+        required: true
       responses:
-        '200':
-          description: Full list of Great Expectations validation rules
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/files/upload-links:
+    post:
+      tags:
+      - files
+      summary: Retrieve multiple files from URLs and start Celery processing
+      description: Retrieve multiple files from given links and begin processing.
+      operationId: post_upload_files_from_links
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadFileUrlsRequest'
+        required: true
+      responses:
+        "202":
+          description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  all_expectations:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name: {type: string}
-                        description: {type: string}
-                        arguments: {type: array, items: {type: string}}
-
-  /parametrics/suite-tuples:
-    get:
-      summary: Get all suite tuples (id, name, use_case)
-      tags: [Parametrics]
-      security: [ {oauth2: []}]
-      responses:
-        '200':
-          description: Expectation suite tuples
+                $ref: '#/components/schemas/UploadFileUrlsResponse'
+        "200":
+          description: Files retrieved successfully
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id: {type: string}
-                    suite_name: {type: string}
-                    use_case: {type: string}
-
-  /tasks/result/{id}:
+                $ref: '#/components/schemas/UploadFileUrlsResponse'
+        "400":
+          description: Invalid request (files array and project_id are required)
+          content: {}
+        "500":
+          description: Server error
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/parametrics/all-expectations:
     get:
-      summary: Get the result of a Celery task by ID
-      tags: [Tasks]
+      tags:
+      - parametrics
+      summary: Returns a list of all available Great Expectations validation rules
+        with descriptions and arguments
+      operationId: get_all_expectations
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/parametrics/all-supported-file-types:
+    get:
+      tags:
+      - parametrics
+      summary: Returns a list of all supported file types
+      operationId: get_supported_file_types
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/parametrics/categorized-expectations:
+    get:
+      tags:
+      - parametrics
+      summary: Returns all available Great Expectations validation rules categorized
+        by data quality issues
+      operationId: get_categorized_expectations
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/parametrics/df-supported-file-types:
+    get:
+      tags:
+      - parametrics
+      summary: Returns a list of supported file types for dataframes
+      operationId: get_supported_file_types
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/parametrics/suite-tuples:
+    get:
+      tags:
+      - parametrics
+      summary: "Get tuples of (id, name, use_case) for dropdowns"
+      operationId: get_suite_tuples
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/uploader_metadata/{file_id}:
+    get:
+      tags:
+      - uploader_metadata
+      summary: Retrieve the uploader_metadata for a specific file
+      description: Retrieve uploader metadata for a specific file
+      operationId: get_file_uploader_metadata_resource
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Task ID
-          schema:
-            type: string
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        '200':
-          description: Task result information
+        "404":
+          description: File Not Found
+          content: {}
+        "200":
+          description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ready:
-                    type: boolean
-                  successful:
-                    type: boolean
-                    nullable: true
-                  value:
-                    type: object
-                    nullable: true
-
-  /tasks/status/{task_id}:
-    get:
-      summary: Get the current status of a Celery task
-      tags: [Tasks]
+                $ref: '#/components/schemas/UploaderMetadataJSON'
+      security:
+      - oauth2: []
+    put:
+      tags:
+      - uploader_metadata
+      summary: Update the uploader_metadata for a specific file
+      description: Update uploader metadata for a specific file.
+      operationId: put_file_uploader_metadata_resource
       parameters:
-        - name: task_id
-          in: path
-          required: true
-          description: Task ID
-          schema:
-            type: string
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploaderMetadataJSON'
+        required: true
       responses:
-        '200':
-          description: Task status information
+        "404":
+          description: File Not Found
+          content: {}
+        "400":
+          description: Invalid JSON
+          content: {}
+        "200":
+          description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  state:
-                    type: string
-                    example: SUCCESS
-                  result:
-                    type: object
-                    nullable: true
-                  message:
-                    type: string
-                    nullable: true
-                  error:
-                    type: string
-                    nullable: true
-
+                $ref: '#/components/schemas/UploaderMetadataJSON'
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+    post:
+      tags:
+      - uploader_metadata
+      summary: Attach uploader metadata to a file
+      operationId: post_file_uploader_metadata_resource
+      parameters:
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploaderMetadataJSON'
+        required: true
+      responses:
+        "404":
+          description: File Not Found
+          content: {}
+        "400":
+          description: Invalid JSON
+          content: {}
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploaderMetadataJSON'
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+    delete:
+      tags:
+      - uploader_metadata
+      summary: Delete the uploader_metadata for a specific file (from Zenoh + DB)
+      operationId: delete_file_uploader_metadata_resource
+      parameters:
+      - name: file_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content: {}
+  /ddm/users/user/profile/{username}:
+    get:
+      tags:
+      - user
+      summary: Fetch a user's profile
+      description: Get user's profile by username.
+      operationId: get_user_profile_resource
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+    post:
+      tags:
+      - user
+      summary: Update public key and optionally profile picture
+      description: Update user's profile picture and/or public key.
+      operationId: post_user_profile_resource
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+        required: true
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/users/user/profile_pic/{filename}:
+    get:
+      tags:
+      - user
+      summary: Serve uploaded profile picture
+      description: Serve uploaded profile picture
+      operationId: get_user_profile_picture_resource
+      parameters:
+      - name: filename
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/validations/results:
+    get:
+      tags:
+      - validations
+      summary: Get all validation results with filters
+      operationId: get_validation_results_list
+      parameters:
+      - name: dataset_name
+        in: query
+        description: 'Dataset names '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: dataset_id
+        in: query
+        description: 'Dataset IDs '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: user_id
+        in: query
+        description: 'User IDs '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: suite_id
+        in: query
+        description: 'Suite IDs '
+        style: form
+        explode: false
+        schema:
+          type: array
+          items:
+            type: string
+      - name: run_time_from
+        in: query
+        description: Start datetime (ISO 8601)
+        schema:
+          type: string
+      - name: run_time_to
+        in: query
+        description: End datetime (ISO 8601)
+        schema:
+          type: string
+      - name: sort
+        in: query
+        description: "Sort: field,asc|desc"
+        schema:
+          type: string
+          default: "run_time,desc"
+      - name: page
+        in: query
+        description: Page number
+        schema:
+          type: integer
+          default: 1
+      - name: perPage
+        in: query
+        description: Results per page
+        schema:
+          type: integer
+          default: 10
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+    post:
+      tags:
+      - validations
+      summary: Save the result of an expectation suite validation on a dataset
+      operationId: post_validation_results_list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationResult'
+        required: true
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/validations/results/{result_id}:
+    get:
+      tags:
+      - validations
+      summary: Get a detailed result entry
+      operationId: get_expectation_result_detail
+      parameters:
+      - name: result_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+          content: {}
+      security:
+      - oauth2: []
+  /ddm/validations/validate/file-against-suites:
+    post:
+      tags:
+      - validations
+      summary: Validate a single file against multiple expectation suites
+      description: Validate a single file against multiple expectation suites.
+      operationId: post_validate_file_against_suites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFileAgainstSuites'
+        required: true
+      responses:
+        "202":
+          description: Validation task started
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
+  /ddm/validations/validate/files-against-suite:
+    post:
+      tags:
+      - validations
+      summary: Validate multiple files against a single expectation suite
+      description: Validate multiple files against a single expectation suite.
+      operationId: post_validate_files_against_suite
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFilesAgainstSuite'
+        required: true
+      responses:
+        "202":
+          description: Validation tasks started
+          content: {}
+      security:
+      - oauth2: []
+      x-codegen-request-body-name: payload
 components:
   schemas:
     FileUpdate:
+      required:
+      - file_id
       type: object
       properties:
         file_id:
@@ -1460,11 +1491,71 @@ components:
           description: Updated filename
         use_case:
           type: array
+          description: Updated use cases (List)
           items:
             type: string
-          description: Updated use cases (List)
-
+    UploadFileUrlRequest:
+      required:
+      - file_url
+      type: object
+      properties:
+        file_url:
+          type: string
+          description: URL of the file to retrieve
+        description:
+          type: string
+          description: Short description of the file
+        use_cases:
+          type: array
+          description: List of use cases
+          items:
+            type: string
+        metadata:
+          type: object
+          properties: {}
+          description: Additional metadata (JSON object)
+    UploadFileUrlResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        file_id:
+          type: string
+          description: ID of the uploaded file
+        file_url:
+          type: string
+          description: URL of the uploaded file
+        zenoh_file_path:
+          type: string
+          description: Storage path of the file
+        fetch_task_id:
+          type: string
+          description: ID of the fetch task
+        process_task_id:
+          type: string
+          description: ID of the processing task
+    DownloadFileIds:
+      required:
+      - file_ids
+      type: object
+      properties:
+        file_ids:
+          type: array
+          description: List of file IDs to download
+          items:
+            type: string
+    ProjectDownloadRequest:
+      required:
+      - project_id
+      type: object
+      properties:
+        project_id:
+          type: string
+          description: Project path like folder1/subfolder2
     FilesUpdateRequest:
+      required:
+      - files
       type: object
       properties:
         files:
@@ -1472,7 +1563,6 @@ components:
           description: List of files to update
           items:
             $ref: '#/components/schemas/FileUpdate'
-
     FilesUpdateResponse:
       type: object
       properties:
@@ -1481,66 +1571,162 @@ components:
           description: Update success message
         updated_files:
           type: array
+          description: List of updated files
           items:
             $ref: '#/components/schemas/FileUpdate'
-
-    UploadFileUrlRequest:
-      type: object
+    DeleteFileIds:
       required:
-        - file_url
-        - project_id
+      - file_ids
+      type: object
       properties:
-        file_url:
-          type: string
-          description: URL of the file to retrieve
-        project_id:
-          type: string
-          description: Project ID associated with the file
-        description:
-          type: string
-          description: Short description of the file
-        use_cases:
+        file_ids:
           type: array
+          description: List of file IDs to delete
           items:
             type: string
-          description: List of use cases
-        metadata:
-          type: object
-          description: Additional metadata (JSON object)
-
-    UploadFileUrlResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        file_id:
-          type: string
-        zenoh_file_path:
-          type: string
-        fetch_task_id:
-          type: string
-        process_task_id:
-          type: string
-
     UploadFileUrlsRequest:
-      type: object
       required:
-        - project_id
-        - files
+      - files
+      - project_id
+      type: object
       properties:
         project_id:
           type: string
+          description: Project ID associated with the files
         files:
           type: array
+          description: List of files to upload
           items:
             $ref: '#/components/schemas/UploadFileUrlRequest'
-
     UploadFileUrlsResponse:
       type: object
       properties:
         message:
           type: string
+          description: Files uploaded successfully
         files:
           type: array
+          description: List of uploaded file responses
           items:
             $ref: '#/components/schemas/UploadFileUrlResponse'
+    FileIdsRequest:
+      required:
+      - file_ids
+      type: object
+      properties:
+        file_ids:
+          type: array
+          description: List of file IDs to download reports
+          items:
+            type: string
+    UploaderMetadataJSON:
+      type: object
+      properties:
+        uploader_metadata:
+          type: object
+          properties: {}
+          description: Uploader metadata (JSON)
+    FileUpload:
+      required:
+      - file
+      type: object
+      properties:
+        file:
+          type: object
+          properties: {}
+          description: Upload a sample file
+        datasource_name:
+          type: string
+          description: Datasource name
+    ExpectationSuite:
+      required:
+      - expectations
+      - file_types
+      - suite_name
+      - user_id
+      type: object
+      properties:
+        suite_name:
+          type: string
+        file_types:
+          type: array
+          description: Allowed file types
+          items:
+            type: string
+        expectations:
+          type: object
+          properties: {}
+        category:
+          type: string
+        description:
+          type: string
+        user_id:
+          type: string
+        use_case:
+          type: string
+    ValidationResult:
+      required:
+      - dataset_name
+      - suite_id
+      - user_id
+      type: object
+      properties:
+        user_id:
+          type: string
+        suite_id:
+          type: string
+        suite_name:
+          type: string
+        dataset_name:
+          type: string
+        result_summary:
+          type: object
+          properties: {}
+        detailed_results:
+          type: object
+          properties: {}
+        path:
+          type: string
+          description: Results file path
+    ValidateFilesAgainstSuite:
+      required:
+      - file_ids
+      - suite_id
+      type: object
+      properties:
+        suite_id:
+          type: string
+          description: Expectation suite ID
+        file_ids:
+          type: array
+          description: List of file IDs to validate
+          items:
+            type: string
+    ValidateFileAgainstSuites:
+      required:
+      - file_id
+      - suite_ids
+      type: object
+      properties:
+        file_id:
+          type: string
+          description: ID of the file to validate
+        suite_ids:
+          type: array
+          description: List of suite IDs to validate against
+          items:
+            type: string
+    UserProfileUpdate:
+      type: object
+      properties:
+        public_key:
+          type: string
+          description: Ethereum Public Key
+  responses:
+    ParseError:
+      description: When a mask can't be parsed
+      content: {}
+    MaskError:
+      description: When any error occurs on mask
+      content: {}
+x-original-swagger-version: "2.0"
