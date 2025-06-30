@@ -488,7 +488,7 @@ class UploadFilesFromLinks(Resource):
                 # 🔥 Start Celery Chain:
                 task_chain = chain(
                     fetch_file_from_link.s(file_url, file_id, zenoh_file_path, username),
-                    process_large_file.s()
+                    process_large_file.s(username=username)
                 ).apply_async()
 
                 log_action_with_context(
