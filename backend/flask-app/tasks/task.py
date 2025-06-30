@@ -140,7 +140,7 @@ def merge_chunks_task(file_id, project_id, total_chunks, final_filename, usernam
             }
         )
         logger.info(f"✅ File merge complete and saved at: {zenoh_file_path}")
-        return {'status': 'success', 'file_id': file_id}
+        return {'status': 'success', 'file_id': file_id, 'username':username}
 
     except Exception as e:
         logger.error(f"❌ Failed to merge chunks: {str(e)}")
@@ -169,7 +169,7 @@ def fetch_file_from_link(file_url, file_id, zenoh_file_path, username):
                 "zenoh_path": zenoh_file_path
             }
         )
-        return {"file_id": file_id, "zenoh_path": zenoh_file_path}
+        return {"file_id": file_id, "zenoh_path": zenoh_file_path, 'username': username}
 
     except requests.exceptions.RequestException as e:
         logger.error(f"❌ Failed to fetch file from {file_url}: {e}")
