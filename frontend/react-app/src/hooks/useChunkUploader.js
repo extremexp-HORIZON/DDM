@@ -5,7 +5,7 @@ import { showMessage } from "../utils/messages";
 import { pollMergeTask } from "./polling";
 import { extractFileName } from "../utils/fileHelpers";
 
-const CHUNK_SIZE = 2 * 1024 * 1024;
+const CHUNK_SIZE = 10 * 1024 * 1024;
 
 const FIELD_MAP = {
   name: "upload_filename",
