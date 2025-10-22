@@ -129,12 +129,21 @@ def download_file_from_zenoh(file_path, local_path):
 
 def save_processed_file(df, file_path, ext, sep=","):
     temp_path = f"/tmp/{os.path.basename(file_path)}_processed{ext}"
+
     if ext != ".parquet":
-        df.to_csv(temp_path, index=False, sep=sep)  # 👈 Use correct separator
+        # One-column guard: ensure plain CSV
+        ncols = getattr(df, "shape", (0, 0))[1]
+        if ncols <= 1:
+            df.to_csv(temp_path, index=False)
+        else:
+            effective_sep = "," if ncols <= 1 else (sep or ",")
+            df.to_csv(temp_path, index=False, sep=effective_sep)
     else:
         df.to_parquet(temp_path)
+
     with open(temp_path, "rb") as f:
         ZenohFileHandler.put_file(file_path, f.read())
     return temp_path
+
 
 
