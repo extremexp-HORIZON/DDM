@@ -32,6 +32,9 @@ services:
       - "3001:3001"
     depends_on:
       - backend
+    environment:
+      REACT_APP_BASE_URL : ${REACT_APP_BASE_URL}      
+      REACT_APP_BASE_AUTH_URL: ${REACT_APP_BASE_AUTH_URL} 
     networks:
       - app_network
 
