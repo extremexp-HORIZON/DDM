@@ -3,27 +3,36 @@ import zipfile
 import tarfile
 import pandas as pd
 import geopandas as gpd
-
-
+from typing import Optional
 
 SUPPORTED_EXTENSIONS = [
-    ".csv", ".xlsx", ".xls", ".json", ".xml", ".parquet", ".orc", ".dta",  # tabular
-    ".feather", ".h5", ".hdf5", ".pkl", ".pickle", ".sas7bdat", ".xpt",    # binary/tabular
-    ".gz", ".bz2", ".xz",                                                  # compressed CSV
-    ".zip", ".tar", ".tgz", ".tar.gz",                                     # archives
-    ".shp", ".geojson", ".gpkg", ".kml",                                   # geospatial (main file)
-    ".shx", ".dbf", ".prj", ".cpg"                                         # ⛓️ Shapefile sidecar files (used with .shp)
+    ".csv", ".xlsx", ".xls", ".json", ".xml", ".parquet", ".orc", ".dta",
+    ".feather", ".h5", ".hdf5", ".pkl", ".pickle", ".sas7bdat", ".xpt",
+    ".gz", ".bz2", ".xz",
+    ".zip", ".tar", ".tgz", ".tar.gz",
+    ".shp", ".geojson", ".gpkg", ".kml",
+    ".shx", ".dbf", ".prj", ".cpg"
 ]
 
+def _read_csv_with_sep(src, sep_opt=None, compression=None):
+    """
+    src: file path or file-like
+    sep_opt: explicit separator char (',' ';' '\t' etc) or None to auto-infer
+    """
+    if sep_opt:
+        return pd.read_csv(src, sep=sep_opt, encoding="utf-8-sig", engine="python", compression=compression)
+    # Auto-detect (the *correct* way)
+    return pd.read_csv(src, encoding="utf-8-sig", engine="python", compression=compression)
 
 
-def load_dataframe(file_path):
+
+def load_dataframe(file_path: str, separator: Optional[str] = None):
     ext = os.path.splitext(file_path)[1].lower()
 
-    def _load_supported_file(fobj, filename):
+    def _load_supported_file(fobj, filename, sep_opt=None):
         try:
             if filename.endswith(".csv"):
-                return pd.read_csv(fobj)
+                return _read_csv_with_sep(fobj, sep_opt)
             elif filename.endswith((".xlsx", ".xls")):
                 return pd.read_excel(fobj)
             elif filename.endswith(".json"):
@@ -57,7 +66,7 @@ def load_dataframe(file_path):
 
     try:
         if ext == ".csv":
-            return pd.read_csv(file_path, sep=None, skipinitialspace=True, encoding="utf-8-sig", engine="python")
+            return _read_csv_with_sep(file_path, separator)
 
         elif ext in [".xlsx", ".xls"]:
             return pd.read_excel(file_path)
@@ -96,15 +105,18 @@ def load_dataframe(file_path):
             return gpd.read_file(file_path).drop(columns="geometry", errors="ignore")
 
         elif ext in [".gz", ".bz2", ".xz"]:
-            return pd.read_csv(file_path, compression=ext[1:])
+            # compressed CSV: pass compression param along
+            comp = ext[1:]  # 'gz' | 'bz2' | 'xz'
+            return _read_csv_with_sep(file_path, separator, compression=comp)
 
         elif ext == ".zip":
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                supported = [f for f in zip_ref.namelist() if os.path.splitext(f)[1].lower() in SUPPORTED_EXTENSIONS]
+                supported = [f for f in zip_ref.namelist()
+                             if os.path.splitext(f)[1].lower() in SUPPORTED_EXTENSIONS]
                 if not supported:
                     return "No supported file found in ZIP."
                 with zip_ref.open(supported[0]) as f:
-                    return _load_supported_file(f, supported[0])
+                    return _load_supported_file(f, supported[0], separator)
 
         elif ext in [".tar", ".tar.gz", ".tgz"]:
             with tarfile.open(file_path, "r:*") as tar:
@@ -112,7 +124,7 @@ def load_dataframe(file_path):
                     name = member.name.lower()
                     if any(name.endswith(e) for e in SUPPORTED_EXTENSIONS):
                         f = tar.extractfile(member)
-                        return _load_supported_file(f, name)
+                        return _load_supported_file(f, name, separator)
                 return "No supported file found in TAR."
 
         return f"Unsupported file extension: {ext}"
