@@ -152,13 +152,26 @@ def add_or_update_uploader_metadata(file, uploader_metadata):
 
 
 def load_dataframe_or_image(local_path, file_record):
-    df_or_error = load_dataframe(local_path)
+    # pull preferred separator if we stored it
+    preferred_sep = None
+    try:
+        meta = file_record.file_metadata or {}
+        if isinstance(meta, str):
+            meta = json.loads(meta)
+        preferred_sep = meta.get("separator")
+    except Exception:
+        preferred_sep = None
+
+    df_or_error = load_dataframe(local_path, separator=preferred_sep)
     if isinstance(df_or_error, pd.DataFrame):
         return df_or_error
+
     ext = os.path.splitext(local_path)[-1].lower()
     if ext in SUPPORTED_IMAGE_FORMATS:
         return process_image_file(local_path, file_record)
+
     raise ValueError(df_or_error)
+
 
 
 # 🔹 Function to cleanup temporary files
@@ -232,13 +245,45 @@ def process_metadata(metadata_file):
         raise Exception("Invalid metadata file format.")
     
 
-def detect_separator(content_bytes):
-    try:
-        sample = content_bytes.decode('utf-8-sig', errors='ignore')[:2048]
-        return csv.Sniffer().sniff(sample).delimiter
-    except Exception:
-        return ','  # fallback to comma
+def detect_separator(content_bytes, candidates=',;\t|'):
+    sample = content_bytes.decode('utf-8-sig', errors='ignore')[:4096]
+    if not sample.strip():
+        return None
 
+    # 1) Try Sniffer with a limited set of delimiters
+    delim = None
+    try:
+        sniff = csv.Sniffer().sniff(sample, delimiters=candidates)
+        delim = sniff.delimiter
+    except Exception:
+        delim = None
+
+    # 2) Validate that the delimiter actually splits multiple lines
+    def splits_well(d):
+        if not d:
+            return False
+        lines = [ln for ln in sample.splitlines() if ln.strip()]
+        if not lines:
+            return False
+        # Count how many non-empty lines have >= 2 fields when split by d
+        good = sum(1 for ln in lines[:50] if len(ln.split(d)) >= 2)
+        return good >= 2  # at least two lines look like multi-column
+
+    if splits_well(delim):
+        return delim
+
+    # 3) Heuristic search over candidates
+    best = None
+    best_score = 0
+    lines = [ln for ln in sample.splitlines() if ln.strip()]
+    for d in candidates:
+        score = sum(1 for ln in lines[:50] if len(ln.split(d)) >= 2)
+        if score > best_score:
+            best = d
+            best_score = score
+
+    # If no delimiter makes ≥ 2 lines split into ≥ 2 fields ⇒ single-column file
+    return best if best_score >= 2 else None
 
 
 def deep_merge_dicts(a: dict, b: dict) -> dict:
