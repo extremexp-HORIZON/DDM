@@ -1,5 +1,5 @@
-const BASE_URL = window?.APP_CONFIG?.BASE_URL ;
-const BASE_AUTH_URL = window?.APP_CONFIG?.BASE_AUTH_URL;
+const BASE_URL = process.env.REACT_APP_BASE_URL;
+const BASE_AUTH_URL = process.env.REACT_APP_BASE_AUTH_URL;
 
 export { BASE_URL, BASE_AUTH_URL };
 
