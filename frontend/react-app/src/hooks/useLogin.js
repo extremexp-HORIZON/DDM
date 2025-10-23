@@ -10,7 +10,7 @@ export const useLogin = () => {
 
   const requestLogin = async () => {
     try {
-      const response = await axios.post(`${BASE_AUTH_URL}/extreme_auth/api/v1/person/login`, {
+      const response = await axios.post(`${BASE_AUTH_URL}/api/v1/person/login`, {
         username,
         password,
       });
