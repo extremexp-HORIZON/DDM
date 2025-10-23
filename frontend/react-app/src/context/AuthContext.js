@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    fetch(BASE_AUTH_URL + "/extreme_auth/api/v1/person/userinfo", {
+    fetch(BASE_AUTH_URL + "/api/v1/person/userinfo", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
