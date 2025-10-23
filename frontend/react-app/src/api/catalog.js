@@ -47,15 +47,5 @@ export const CATALOG_API = {
     });
     return response.data;
   },
-
-  advancedQuery: async (queryPayload) => {
-    const response = await axios.post(`${BASE_URL}/catalog/advanced`, queryPayload, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-    return response.data;
-  },
   
 };

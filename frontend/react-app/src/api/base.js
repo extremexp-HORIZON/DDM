@@ -8,8 +8,8 @@ export const defaultHeaders = {
     "Content-Type": "application/json",
     "Authorization": `Bearer ${localStorage.getItem("token")}`,
   },
-  // Don't set Content-Type for FormData; the browser will add the boundary.
   formData: {
+    "Content-Type": "multipart/form-data",
     "Authorization": `Bearer ${localStorage.getItem("token")}`,
   },
 };

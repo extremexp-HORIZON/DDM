@@ -3,7 +3,6 @@ from flask import request, jsonify
 from models.file import File
 from extensions import db
 from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
-from utils.advanced_filtering import filter_files
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
 from parsers.file_catalog_options_parser import file_options_parser
 from parsers.file_catalog_tree import tree_query_parser
@@ -286,16 +285,16 @@ class FileAdvancedQueryResource(Resource):
         """Supports complex JSON expressions for file filtering."""
         try:
             filters = request.json
-            query = filter_files(filters)
-            files = query.all()
         except Exception as e:
-            return {'message': 'Invalid query', 'error': str(e)}, 400
+            return {'message': 'Invalid JSON format.', 'error': str(e)}, 400
 
+        # Fetch the files using the filter function
+        files = File.filter_files(filters)
 
         return jsonify([{
             'id': file.id,
             'filename': file.upload_filename,
             'use_case': file.use_case,
-            'created': file.created,
+            'timestamp': file.timestamp,
             'file_metadata': file.file_metadata
         } for file in files])

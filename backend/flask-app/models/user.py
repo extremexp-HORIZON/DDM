@@ -5,7 +5,7 @@ class User(db.Model):
     __tablename__ = 'users'
 
     sub = db.Column(db.String(), primary_key=True)
-    username = db.Column(db.String(150), nullable=False, unique=False)
+    username = db.Column(db.String(150), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=True)
     public_key = db.Column(db.String(255), nullable=True)
     profile_pic = db.Column(db.String(255), nullable=True) 

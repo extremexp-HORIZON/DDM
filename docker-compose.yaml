@@ -1,16 +1,16 @@
 services:
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama  
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: always
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]
     environment:
       OLLAMA_NUM_PARALLEL: 4
       OLLAMA_MAX_LOADED_MODELS: 1
@@ -37,9 +37,6 @@ services:
       - REACT_APP_BASE_AUTH_URL=${REACT_APP_BASE_AUTH_URL} 
     networks:
       - app_network
-    environment:
-      - REACT_APP_BASE_URL=${REACT_APP_BASE_URL}      
-      - REACT_APP_BASE_AUTH_URL=${REACT_APP_BASE_AUTH_URL} 
 
   # Backend service (Flask app)
   backend:
@@ -64,8 +61,7 @@ services:
     networks:
       - app_network
     volumes:
-      - ./backend/flask-app/uploads:/app/uploads 
-      - ./backend/flask-app/compiled_contracts:/app/compiled_contracts  
+      - ./backend/flask-app/uploads:/app/uploads  # Mount uploads directory
     extra_hosts:
       - "host.docker.internal:host-gateway"  # Optional: for host access
 
@@ -76,17 +72,11 @@ services:
       context: ./backend/flask-app
       dockerfile: Dockerfile.celery
     env_file: ./backend/flask-app/.env  # Load environment variables
-    environment:
-      - RUN_COMPILE_DEPLOY_ON_STARTUP=1
-      - DEFAULT_NETWORK=sepolia
-
-    # - ALWAYS_REDEPLOY=1
     depends_on:
       - backend
       - db
     volumes:
-      - ./backend/flask-app/uploads:/app/uploads  
-      - ./backend/flask-app/compiled_contracts:/app/compiled_contracts  
+      - ./backend/flask-app/uploads:/app/uploads  # Mount uploads directory for Celery
     networks:
       app_network:
         ipv4_address: 192.168.10.10
@@ -102,8 +92,6 @@ services:
       - POSTGRES_DB=mydatabase
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"      
     networks:
       app_network:
         ipv4_address: 192.168.10.11
@@ -166,7 +154,7 @@ services:
       - app_network
 
   proxy-service:
-    image: ghcr.io/yagorezende/extremexp-abacproxy:latest
+    image: ghcr.io/yagorezende/extremexp-abacproxy:dev
     container_name: proxy-service
      # flask requires SIGINT to stop gracefully
      # (default stop signal from Compose is SIGTERM)
@@ -227,8 +215,6 @@ services:
       - OIDC_RP_REALM_ID=${OIDC_RP_REALM_ID}
       - OIDC_RP_CLIENT_SECRET=${OIDC_RP_CLIENT_SECRET}
       - OIDC_RP_SIGN_ALGO=${OIDC_RP_SIGN_ALGO}
-      - BLOCKCHAIN_RPC_URL=${BLOCKCHAIN_RPC_URL}
-      - EVM_PRIVATE_KEY=${EVM_PRIVATE_KEY}
     command: python app.py
     networks:
       - app_network
@@ -249,4 +235,3 @@ networks:
 volumes:
   postgres_data:
   ollama_data:
-  
