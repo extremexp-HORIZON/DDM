@@ -21,4 +21,4 @@ COPY . .
 EXPOSE 3001
 
 # Run the app
-CMD ["npm", "start", "dev"]
+CMD ["npm", "start"]

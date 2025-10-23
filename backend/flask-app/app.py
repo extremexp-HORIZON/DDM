@@ -7,6 +7,7 @@ from celery import Celery, Task
 from extensions.db import db
 from extensions.api import api
 from models import File
+from models.blockchain import DeployedContract, ContractEvent
 from utils.ollama_util import wait_for_ollama_ready, ensure_mistral_loaded 
 from routes.file_routes import file_ns
 from routes.files_routes import files_ns
@@ -16,8 +17,10 @@ from routes.expectation_routes import expectations_ns
 from routes.validation_routes import validations_ns
 from routes.parametric_routes import parametrics_ns
 from routes.user_routes import user_ns
+from routes.blockchain_routes import blockchain_ns
 from flask_cors import CORS
 from flask_migrate import Migrate
+
 
 # Load environment variables
 load_dotenv()
@@ -36,8 +39,8 @@ def create_app(config_object="config.Config"):
     # Initialize Flask app
     app = Flask(__name__)
     CORS(app, allow_headers=["Content-Type", "Authorization", "User-Agent", "Accept"],
-            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allow_origins=["*"]
+            methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            resources={r"*": {"origins": "*"}},
         ) 
 
     blueprint = Blueprint('api', __name__)
@@ -70,6 +73,7 @@ def create_app(config_object="config.Config"):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db) 
+    
     api.init_app(
         app,
         version="1.0",
@@ -91,14 +95,41 @@ def create_app(config_object="config.Config"):
     api.add_namespace(validations_ns, path='/ddm/validations')
     api.add_namespace(parametrics_ns, path='/ddm/parametrics')
     api.add_namespace(user_ns, path="/ddm/users")
+    api.add_namespace(blockchain_ns, path="/ddm/blockchain")
 
 
     # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
         from routes.task_routes import view_tasks_bp
-        from tasks.task import fetch_file_from_link,merge_chunks_task,process_large_file,build_expectations_task, build_column_descriptions_task
-
+        from tasks.task import (
+            fetch_file_from_link,
+            merge_chunks_task,
+            process_large_file,
+            build_expectations_task, 
+            build_column_descriptions_task
+        )
+        from tasks.chain import scan_events_task
+        from tasks.compile import compile_contracts_task
+        from tasks.deploy import deploy_ddm_suite_task
+        from tasks.bootstrap import kick_off
+        # on app boot, resume scanning for any contracts already in DB
+        # existing = DeployedContract.query.all()
+        # for c in existing:
+        #     try:
+        #         scan_events_task.apply_async(
+        #             kwargs=dict(
+        #                 network=c.network,
+        #                 address=c.address,
+        #                 abi=c.abi,  # store ABI JSON in the model
+        #                 from_block=(c.last_scanned_block or c.start_block),
+        #                 poll_secs=60,             # default
+        #                 max_blocks_per_tick=2_000 # throttle per tick
+        #             ),
+        #             ignore_result=True,
+        #         )
+        #     except Exception as e:
+        #         app.logger.error(f"Failed to enqueue scanner for {c.address}: {e}")
 
     app.register_blueprint(view_tasks_bp)
     celery_app = app.extensions['celery']
@@ -143,5 +174,8 @@ def celery_init_app(app: Flask) -> Celery:
     celery_app.config_from_object(app.config["CELERY"])
     celery_app.set_default()
     app.extensions["celery"] = celery_app
+
+    celery_app.flask_app = app
+
     return celery_app
 

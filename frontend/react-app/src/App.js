@@ -11,6 +11,9 @@ import ChunkUploader from "./pages/UploadChunks";
 import LinkUploader from "./pages/UploadLinks";
 import Catalog from "./pages/Catalog";
 import MyCatalog from "./pages/MyCatalog";
+import ExploreProjectsTable from "./pages/ExploreProjectsTable";
+
+import FileQueryBuilder from './pages/FileQueryBuilder';
 import ExpectationSuites from "./pages/ExpectationSuites";
 import SetPolicies from "./pages/SetPolicies";
 import SetExpectations from "./pages/SetExpectations";
@@ -18,11 +21,13 @@ import ValidationsResults from "./pages/ValidationsResults";
 import ValidationViewerPage from "./pages/ValidationViewerPage";
 import ReportViewerPage from "./pages/ReportViewerPage";
 import Parametrics from "./pages/Parametrics";
-import ExploreProjectsTable from "./pages/ExploreProjectsTable";
+import BlockchainContracts from "./pages/BlockchainContracts";
 import "./styles/layout.css";
 import "./styles/global.css";
 import "primeicons/primeicons.css";
 import LoginPage from "./pages/Login";
+
+
 
 
 
@@ -40,6 +45,7 @@ function App() {
                     <Route path="/login" element={<LoginPage/>}/>
                     <Route path="/my-catalog" element={<MyCatalog/>}/>
                     <Route path="/projects" element={<ExploreProjectsTable />} />
+                    <Route path="/catalog-advanced" element={<FileQueryBuilder />} />
                     <Route path="/upload" element={<FileUploader/>}/>
                     <Route path="/upload-async" element={<ChunkUploader/>}/>
                     <Route path="/upload-links" element={<LinkUploader/>}/>
@@ -50,6 +56,7 @@ function App() {
                     <Route path="/validation_results_viewer/:suiteId/:datasetId" element={<ValidationViewerPage/>}/>
                     <Route path="/report_viewer/:fileId" element={<ReportViewerPage/>}/>
                     <Route path="/parametrics" element={<Parametrics/>}/>
+                    <Route path="/blockchain/contracts" element={<BlockchainContracts />} />
                   </Routes>
                 </Layout>
               </PrimeReactProvider>

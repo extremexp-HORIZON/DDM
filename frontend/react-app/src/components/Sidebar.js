@@ -41,7 +41,8 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
           children: [
             { label: "Catalog", icon: "pi pi-table", to: "/" },
             { label: "My Catalog", icon: "pi pi-inbox", to: "/my-catalog" },
-            { label: "Projects", icon: "pi pi-folder", to: "/projects" }
+            { label: "Projects", icon: "pi pi-folder", to: "/projects" },
+            { label: "Advanced", icon: "pi pi-folder", to: "/catalog-advanced" }
           ]
         }
       ]
@@ -85,7 +86,18 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
     },
 
     { label: "Policies", icon: "pi pi-lock", to: "/set-policies" },
-    { label: "Settings", icon: "pi pi-cog", to: "/parametrics" }
+    { label: "Settings", icon: "pi pi-cog", to: "/parametrics" },
+    {
+    children: [
+      {
+        label: "Blockchain",
+        icon: "pi pi-link", 
+        children: [
+          { label: "Contracts", icon: "pi pi-file-contract", to: "/blockchain/contracts" }
+        ] 
+      } 
+    ]
+    }
 
   ];
   const getInitialExpanded = (items) => {
