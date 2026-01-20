@@ -1,0 +1,784 @@
+/* top registry row: 3 cards filling the line */
+.registry-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  width: 100%;
+}
+
+/* two cards in one line for dataset + validation registries */
+.dataset-registry-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  width: 100%;
+}
+
+/* responsive fallback */
+@media (max-width: 900px) {
+  .registry-panel,
+  .dataset-registry-panel {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  }
+}
+
+/* suite & dataset cards grid – up to 4 per row, full width */
+.suite-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0.85rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.dataset-grid {
+  margin-bottom: 1.5rem;
+}
+
+/* generic card styling */
+.suite-card {
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  font-size: 0.8rem;
+}
+
+.suite-card.thin-card {
+  padding: 0.55rem 0.7rem;
+}
+
+.suite-card.full-width-card {
+  width: 100%;
+}
+
+.suite-card-dark {
+  background: #25292D;
+  border-color: #1f2937;
+}
+
+.suite-card-light {
+  background: #ffffff;
+  border-color: #e5e7eb;
+}
+
+.text-muted {
+  color: #6b7280;
+}
+
+/* events list inside registry cards */
+.registry-events-container {
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+}
+
+.registry-events-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.registry-event-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.75rem;
+  padding: 0.15rem 0;
+}
+
+.registry-event-name {
+  font-weight: 500;
+}
+
+.registry-event-meta {
+  color: #9ca3af;
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+
+.registry-event-more {
+  padding-top: 0.2rem;
+}
+
+/* validators snippet in top row */
+.validators-list {
+  margin-top: 0.25rem;
+}
+
+.validator-row {
+  padding: 0.15rem 0;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.25);
+}
+
+.validator-row:last-child {
+  border-bottom: none;
+}
+
+.validator-row .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.registry-events-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.registry-events-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.registry-events-table th,
+.registry-events-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+}
+
+.dark-mode .registry-events-table th,
+.dark-mode .registry-events-table td {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.badge-clickable {
+  cursor: pointer;
+}
+
+.badge-active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Make PrimeReact Tag act as a flex chip so contents center nicely */
+.p-tag.removable-tag,
+.p-tag.validator-tag {
+  display: inline-flex;
+  align-items: center;
+}
+
+.p-tag.removable-tag .p-tag-value,
+.p-tag.validator-tag .p-tag-value {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* File format chip: keep icon + text aligned */
+.fileformat-chip {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Tiny icon buttons inside tags */
+.tag-remove-btn,
+.tag-icon-btn {
+  padding: 0;
+  min-width: 0;
+}
+
+/* Super small text helper */
+.text-2xs {
+  font-size: 0.7rem;
+}
+
+/* Main layout inside validator badge */
+.validator-badge {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Left: 4 lines stacked */
+.validator-badge-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* Right: vertical Edit / Remove */
+.validator-badge-right {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Small icon buttons inside chips */
+.tag-icon-btn {
+  padding: 0;
+  min-width: 0;
+}
+/* Shared chip icon styles */
+.tag-icon-btn {
+  padding: 0;
+  min-width: 0;
+  border: none;
+}
+
+/* Make icons larger and clearly visible */
+.tag-icon-btn .pi {
+  font-size: 0.8rem;
+}
+
+/* Copy – neutral/gray */
+.tag-icon-copy .pi {
+  color: #29cff8; /* tailwind gray-200 */
+}
+
+/* Navigate – light blue */
+.tag-icon-navigate .pi {
+  color: #18e980; /* tailwind blue-300 */
+}
+
+/* Edit – yellow */
+.tag-icon-edit .pi {
+  color: #e0b506; /* tailwind yellow-400 */
+}
+
+/* Remove – red (stronger than default) */
+.tag-icon-remove .pi {
+  color: #f01010; /* tailwind red-300 */
+}
+
+/* Base style for clickable event badges */
+.p-tag.badge-clickable {
+  background-color: #f8f9fa;        /* soft light gray */
+  border-radius: 9999px;            /* pill style */
+  border: 1px solid #e5e7eb;
+  color: #374151;                   /* gray-700 */
+  padding: 0.1rem 0.5rem;
+}
+
+/* Active (selected) badge – a bit stronger */
+.p-tag.badge-clickable.badge-active {
+  background-color: #e5efff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+/* Dark mode overrides */
+.dark-mode .p-tag.badge-clickable {
+  background-color: #212525;        /* near bg-slate-900 */
+  border-color: #4b5563;            /* slate-600 */
+  color: #e5e7eb;                   /* gray-200 */
+}
+
+.dark-mode .p-tag.badge-clickable.badge-active {
+  background-color: #1e3a8a;        /* blue-900 */
+  border-color: #60a5fa;            /* blue-400 */
+  color: #e5f0ff;
+}
+
+/* Status badges (used in SuiteCard) */
+.status-badge {
+  border-radius: 9999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+/* --- LIGHT MODE --- */
+.status-badge.status-open {
+  background-color: #dcfce7;  /* green-100 */
+  color: #166534;             /* green-800 */
+  border-color: #bbf7d0;
+}
+
+.status-badge.status-closed {
+  background-color: #fee2e2;  /* red-100 */
+  color: #991b1b;             /* red-800 */
+  border-color: #fecaca;
+}
+
+.status-badge.status-expired {
+  background-color: #fef3c7;  /* amber-100 */
+  color: #92400e;             /* amber-800 */
+  border-color: #fde68a;
+}
+
+/* --- DARK MODE OVERRIDES --- */
+.dark-mode .status-badge.status-open {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;              /* green-200 */
+  border-color: #22c55e;
+}
+
+.dark-mode .status-badge.status-closed {
+  background-color: rgba(248, 113, 113, 0.18);
+  color: #fecaca;              /* red-200 */
+  border-color: #f97373;
+}
+
+.dark-mode .status-badge.status-expired {
+  background-color: rgba(251, 191, 36, 0.2);
+  color: #fde68a;              /* amber-200 */
+  border-color: #fbbf24;
+}
+
+/* allow absolute children inside cards */
+.suite-card {
+  position: relative;
+}
+
+/* status badge pinned to top-right */
+.suite-status-pill {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.55rem;
+  z-index: 1;
+}
+
+/* Make category / format / validator chips look like filter badges */
+
+/* base style – light mode */
+.p-tag.removable-tag,
+.p-tag.validator-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f8f9fa;     
+  border: 1px solid #e5e7eb;
+  color: #374151;                
+  padding: 0.05rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+/* keep inner content aligned */
+.p-tag.removable-tag .p-tag-value,
+.p-tag.validator-tag .p-tag-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* dark mode variant */
+.dark-mode .p-tag.removable-tag,
+.dark-mode .p-tag.validator-tag {
+  background-color: #212525;
+  border-color: #4b5563;          /* slate-600-ish */
+  color: #e5e7eb;                 /* gray-200 */
+}
+
+/* Fixed-height area for registered categories/formats/validators */
+.registry-registered-block {
+  /* fixed height to align buttons across cards */
+  height: 160px;
+  overflow-y: auto;
+  /* optional: subtle divider */
+  border-top: 1px dashed rgba(148, 163, 184, 0.35);
+  padding-top: 0.35rem;
+}
+
+.dark-mode .registry-registered-block {
+  border-top-color: rgba(148, 163, 184, 0.5);
+}
+
+/* make chips nicer in that area */
+.registry-registered-block .p-tag.removable-tag,
+.registry-registered-block .p-tag.validator-tag {
+  background-color: #f8f9fa;
+  border: 1px solid #e5e7eb;
+}
+
+.dark-mode .registry-registered-block .p-tag.removable-tag,
+.dark-mode .registry-registered-block .p-tag.validator-tag {
+  background-color: #2f323a;
+  border-color: #374151;
+}
+
+/* ---- SCROLLBAR STYLING (all modes) ---- */
+
+/* Firefox */
+.registry-registered-block {
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af transparent; /* thumb, track */
+}
+
+/* Dark mode override – Firefox */
+.dark-mode .registry-registered-block {
+  scrollbar-color: #4b5563 transparent;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+.registry-registered-block::-webkit-scrollbar {
+  width: 6px;
+}
+
+.registry-registered-block::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.registry-registered-block::-webkit-scrollbar-thumb {
+  background-color: #9ca3af;   /* light gray */
+  border-radius: 9999px;
+}
+
+/* Dark mode – WebKit */
+.dark-mode .registry-registered-block::-webkit-scrollbar-thumb {
+  background-color: #4b5563;   /* slate-600-ish */
+}
+
+.validator-status-pill {
+  border-radius: 9999px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.validator-status-active {
+  background-color: #dcfce7;  /* green-100 */
+  color: #166534;             /* green-800 */
+  border-color: #bbf7d0;
+}
+
+.validator-status-inactive {
+  background-color: #fee2e2;  /* red-100 */
+  color: #991b1b;             /* red-800 */
+  border-color: #fecaca;
+}
+
+.dark-mode .validator-status-active {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;
+  border-color: #22c55e;
+}
+
+.dark-mode .validator-status-inactive {
+  background-color: rgba(248, 113, 113, 0.18);
+  color: #fecaca;
+  border-color: #f97373;
+}
+
+/* --- Generic "status chip" style (base) --- */
+.validator-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Existing color variants – keep your colors */
+.validator-status-active {
+  background-color: #dcfce7;  /* green-100 */
+  color: #166534;             /* green-800 */
+  border-color: #bbf7d0;
+}
+
+.validator-status-inactive {
+  background-color: #fee2e2;  /* red-100 */
+  color: #991b1b;             /* red-800 */
+  border-color: #fecaca;
+}
+
+.dark-mode .validator-status-active {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #bbf7d0;
+  border-color: #22c55e;
+}
+
+.dark-mode .validator-status-inactive {
+  background-color: rgba(248, 113, 113, 0.18);
+  color: #fecaca;
+  border-color: #f97373;
+}
+
+/* --- Position top-right inside cards --- */
+
+.suite-card {
+  position: relative;
+}
+
+/* Container that sits in the top-right corner of a card */
+.dataset-badge-container {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* --- Generic "status chip" style (shared) --- */
+.validator-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* --- DATASET STATUS VARIANTS (use same style as validator pills) --- */
+/* --- Dataset badge in top-right (keep as is) --- */
+.suite-card {
+  position: relative;
+}
+
+.dataset-badge-container {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* --- Action row at bottom of card --- */
+.suite-card .action-row {
+  display: flex;
+  flex-direction: row;
+  gap: 0.35rem;
+  padding: 0.25rem 0.25rem;
+  min-height: fit-content;
+  align-items: center;
+  justify-content: center;      /* ✅ center row in card */
+  flex-wrap: nowrap;            /* no wrapping */
+  overflow-x: auto;             /* scroll if too many icons */
+}
+
+.suite-card .action-row::-webkit-scrollbar {
+  height: 4px;
+}
+
+.suite-card .action-row::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 10px;
+}
+
+/* --- Icon colors per action (purely visual) --- */
+.btn-blue .pi   { color: #3b82f6; }  /* suite URI */
+.btn-purple .pi { color: #a855f7; }  /* docs */
+.btn-teal .pi   { color: #14b8a6; }  /* certificate */
+.btn-green .pi  { color: #22c55e; }  /* claim reward */
+.btn-red .pi    { color: #ef4444; }  /* cancel & refund */
+.btn-orange .pi { color: #f97316; }  /* register dataset */
+
+/* --- Icon-only buttons (no static size) --- */
+.suite-card .icon-btn.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;            /* let Prime size via .p-button-sm */
+  border-radius: 9999px !important; /* circle */
+  border: none;                     /* rely on text style */
+  background: transparent;          /* p-button-text vibe */
+}
+
+/* Remove default icon left margin, center the icon */
+.suite-card .icon-btn.p-button .p-button-icon,
+.suite-card .icon-btn.p-button .p-button-icon-left {
+  margin: 0 !important;
+}
+
+/* If some label sneaks in, hide it for icon-only buttons */
+.suite-card .icon-btn.p-button .p-button-label {
+  display: none;
+}
+
+/* Keep hover/focus layer circular */
+.suite-card .icon-btn.p-button::before {
+  border-radius: 9999px !important;
+}
+
+/* --- Truly circular icon-only buttons inside suite cards --- */
+.suite-card .icon-btn.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 2rem;
+  height: 2rem;
+
+  border-radius: 9999px !important;
+  border: none;
+  background: transparent; /* keep the text-style look */
+}
+
+/* remove default left-margin on icons and center them */
+.suite-card .icon-btn.p-button .p-button-icon,
+.suite-card .icon-btn.p-button .p-button-icon-left {
+  margin: 0 !important;
+}
+
+/* hide any label that might sneak in */
+.suite-card .icon-btn.p-button .p-button-label {
+  display: none;
+}
+
+/* keep hover/focus overlay circular as well */
+.suite-card .icon-btn.p-button::before {
+  border-radius: 9999px !important;
+}
+
+.dark-mode .p-dropdown-panel .p-dropdown-header {
+    padding: 0.75rem 1.25rem;
+    color: #e5efff;
+    background: #212529;
+    margin: 0;
+    border-top-right-radius: 6px;
+    border-top-left-radius: 6px;
+}
+
+
+/* ========== Scrollbar (panel list) ========== */
+
+/* Firefox */
+.dark-mode .p-dropdown-items-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #212529;  /* thumb, track */
+}
+
+/* WebKit (Chrome, Edge, etc.) */
+.dark-mode .p-dropdown-items-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dark-mode .p-dropdown-items-wrapper::-webkit-scrollbar-track {
+  background: #212529;
+}
+
+.dark-mode .p-dropdown-items-wrapper::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 999px;
+}
+
+/* highlight selected value in the closed input too */
+.dark-mode .p-dropdown {
+  background-color: #212529;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.dark-mode .p-dropdown .p-dropdown-label {
+  color: #e5e7eb;
+}
+
+/* Fixed height + scrollbar for event tables */
+.registry-scroll {
+  max-height: 280px;          /* adjust to taste */
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 8px;
+}
+
+/* optional: keep header visible while scrolling */
+.registry-events-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: inherit; /* or set a solid background if needed */
+}
+
+/* Make the DV section compact and scrollable */
+.suite-dv-scroll {
+  max-height: 240px;      /* <= key: stop the card from growing */
+  overflow: auto;
+  padding-right: 6px;
+}
+
+/* tighter dataset item spacing */
+.suite-dv-item {
+  border-top: 1px solid var(--surface-border);
+  padding-top: 4px;
+  margin-top: 4px;
+}
+
+.suite-dv-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+  font-size: 0.72rem;     /* smaller than text-xs */
+  line-height: 1.1;
+}
+
+.suite-dv-k {
+  color: var(--text-color-secondary);
+  font-weight: 600;
+}
+
+.suite-dv-fp,
+.suite-dv-uploader {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 38%;
+}
+
+/* icon-only mini button */
+.suite-dv-mini-btn.p-button.p-button-text.p-button-sm {
+  padding: 0;
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+/* validations: compact chips */
+.suite-dv-validations {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.suite-val-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--surface-border);
+  font-size: 0.70rem;
+  line-height: 1.1;
+}
+
+.suite-val-chip.ok { background: rgba(0, 200, 0, 0.10); }
+.suite-val-chip.bad { background: rgba(255, 0, 0, 0.10); }
+
+.suite-val-chip-text {
+  white-space: nowrap;
+}
+
+.suite-val-chip-mark {
+  font-weight: 700;
+}
+
+.suite-val-chip-btn.p-button.p-button-text.p-button-sm {
+  padding: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* Dark mode – datasets popover scroll (Firefox) */
+.dark-mode .suite-dv-scroll {
+  overflow-y: auto;           /* ensure scroll */
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+/* 🟡 Pending */
+.validator-status-pending {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+/* 🏆 Claimed */
+.validator-status-claimed {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
