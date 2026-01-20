@@ -167,9 +167,20 @@ const SetExpectations = () => {
         handleArgChange={handleArgChange}
         handleTableArgChange={handleTableArgChange}
       />,
-      // ✅ fallback when expectations is empty
-    <StepFinalize saveExpectations={saveExpectations} /> // ✅ this now gets evaluated properly
-  ];
+
+      <StepFinalize
+       saveExpectations={saveExpectations}
+       useCase={useCase}                               
+       selectedCategory={selectedCategory}            
+       customCategory={customCategory}              
+       selectedFileTypes={selectedFileTypes}           
+       expectations={{
+         expectations,
+         tableExpectations,
+         selectedExpectations
+       }}
+     />
+     ];
   
   
   return (
