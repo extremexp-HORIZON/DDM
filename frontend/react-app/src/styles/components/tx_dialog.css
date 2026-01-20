@@ -1,0 +1,58 @@
+/* ---- ContractTxsDialog filters ---- */
+.tx-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;     /* vertical center for the row */
+  flex-wrap: wrap;         /* wrap if space is tight, else one row */
+  margin: 8px 0 10px;
+  --ctrl-h: 40px;          /* unified control height */
+}
+
+/* each item grows evenly, same width per row; tweak min-width to taste */
+.txf-item {
+  flex: 1 1 0;
+  min-width: 180px;
+}
+
+/* Make inner inputs fill the item width */
+.txf-item .p-inputtext,
+.txf-item .p-inputnumber,
+.txf-item .p-calendar,
+.txf-item .p-inputnumber-input,
+.txf-item .p-calendar .p-inputtext {
+  width: 100%;
+}
+
+/* Uniform height & single line */
+.txf-item .p-inputtext,
+.txf-item .p-inputnumber .p-inputtext,
+.txf-item .p-calendar .p-inputtext {
+  height: var(--ctrl-h);
+  display: flex;
+  align-items: center;      /* vertical centering inside input */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Calendar wrapper shouldn’t force extra height */
+.txf-item .p-calendar {
+  height: var(--ctrl-h);
+  display: flex;
+  align-items: center;
+}
+
+/* Calendar icon button height match */
+.txf-item .p-calendar .p-datepicker-trigger,
+.txf-item .p-calendar .p-button {
+  height: var(--ctrl-h);
+}
+
+/* Number input group aligns */
+.txf-item .p-inputnumber {
+  display: flex;
+  align-items: center;
+}
+
+/* Fix double-line quirks in some themes/dark mode */
+.txf-item .p-inputtext::placeholder { line-height: normal; }
