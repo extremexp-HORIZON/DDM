@@ -47,3 +47,26 @@
   .dark-mode .p-treetable .p-treetable-tbody > tr:nth-child(even) > td {
     background-color: #212525;
   }
+  /* Dark mode – Firefox */
+  .dark-mode .dataset-container {
+    scrollbar-color: #4b5563 transparent;
+  }
+
+  /* WebKit (Chrome, Edge, Safari) */
+  .dataset-container::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .dataset-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .dataset-container::-webkit-scrollbar-thumb {
+    background-color: #9ca3af;  /* light mode thumb */
+    border-radius: 9999px;
+  }
+
+  /* Dark mode – WebKit */
+  .dark-mode .dataset-container::-webkit-scrollbar-thumb {
+    background-color: #4b5563;  /* darker thumb */
+  }

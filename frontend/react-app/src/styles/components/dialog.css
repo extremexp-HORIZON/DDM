@@ -14,3 +14,13 @@
 .dark-mode .p-dialog .p-inputtextarea {
   background-color: #212529;
 }
+
+.dark-mode .p-calendar {
+  background-color: #212529; /* Slightly lighter dark background for form fields */
+  color :#b0b0b0;
+  width:auto; 
+}
+
+.dark-mode .p-datatable .p-datatable-header {
+  background-color: #212525;
+}
