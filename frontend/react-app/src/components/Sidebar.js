@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Sidebar } from "primereact/sidebar";
 import { Button } from "primereact/button";
 import { Avatar } from "primereact/avatar";
@@ -10,7 +10,10 @@ import { useMetamaskContext } from "../context/MetamaskContext";
 import { useLogout } from "../hooks/useLogout";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { ProfileDialog } from "./ProfileDialog";
-
+import { OverlayPanel } from "primereact/overlaypanel";
+import { useUserNotifications } from "../hooks/useUserNotifications";
+import NotificationDetailsDialog from "./NotificationDetailsDialog";
+import "../styles/components/NotificationDetailsDialog.css";
 import "primereact/resources/themes/lara-light-blue/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -27,7 +30,51 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
   const [showProfile, setShowProfile] = useState(false);
   const [showBalance, setShowBalance] = useState(true); 
   const { profile } = useUserProfile(user);
-  console.log("wallet:", wallet, "balance:", balance);
+  const notifPanelRef = useRef(null); 
+  const [selectedNotif, setSelectedNotif] = useState(null);
+  const [notifDialogOpen, setNotifDialogOpen] = useState(false);
+  const openInExplorer = (value, type, network) => {
+  // Build based on your networks
+  const base =
+    network?.toLowerCase() === "sepolia"
+      ? "https://sepolia.etherscan.io"
+      : "https://etherscan.io";
+
+    const path = type === "tx" ? `/tx/${value}` : `/address/${value}`;
+    window.open(base + path, "_blank", "noopener,noreferrer");
+  };
+
+
+
+  const {
+    notifications,
+    unreadCount,
+    loading: notifLoading,
+    markAsRead,
+    markAllAsRead,
+  } = useUserNotifications({
+    onlyUnread: false,
+    limit: 20,
+    enabled: !!authenticated,  // 👈 only fetch when logged in
+  });
+
+  const renderNotificationLabel = (n) => {
+    switch (n.kind) {
+      case "suite_created":
+        return `New dataset request #${n.suite_id} created`;
+      case "reward_claimed":
+        return `Reward claimed on suite #${n.suite_id}`;
+      case "suite_closed":
+        return `Suite #${n.suite_id} closed`;
+      case "dataset_registered":
+        return `Dataset registered: ${n.dataset_fingerprint?.slice(0, 10)}…`;
+      case "dataset_validated":
+        return `Dataset validated: ${n.dataset_fingerprint?.slice(0, 10)}…`;
+      default:
+        return n.kind || "Notification";
+    }
+  };
+
 
   const backgroundColor = isDarkMode ? "#212529" : "#ffffff";
   const textColor = isDarkMode ? "#ffffff" : "#212529"; 
@@ -41,7 +88,8 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
           children: [
             { label: "Catalog", icon: "pi pi-table", to: "/" },
             { label: "My Catalog", icon: "pi pi-inbox", to: "/my-catalog" },
-            { label: "Projects", icon: "pi pi-folder", to: "/projects" }
+            { label: "Projects", icon: "pi pi-folder", to: "/projects" },
+            { label: "Advanced", icon: "pi pi-bolt", to: "/catalog-advanced" }
           ]
         }
       ]
@@ -59,33 +107,37 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
         }
       ]
     },
+    
     {
       children: [
         {
-          label: "Expectations",
-          icon: "pi pi-sliders-h",
+          label: "Data Quality",
+          icon: "pi pi-star",
           children: [
-            { label: "Suites", icon: "pi pi-folder-open", to: "/expectation-suites" },
-            { label: "Create", icon: "pi pi-file-plus", to: "/set-expectations" }
-          ]
-        }
-       ]
-    },
-    {
-      children: [
-        {
-          label: "Validations",
-          icon: "pi pi-check-circle",
-          children: [
-            { label: "Results", icon: "pi pi-check", to: "/validation-results" },
+            { label: "Expectations", icon: "pi pi-sliders-h", to: "/expectation-suites" },
+            { label: "Validations", icon: "pi pi-check-square", to: "/validation-results" },
+            { label: "Create Request", icon: "pi pi-file-plus", to: "/set-expectations" }
            
           ]
         }
       ]
     },
-
+    {
+      children: [
+        {
+          label: "Web3 Provenance",
+          icon: "pi pi-box", 
+          children: [
+            { label: "Dashboard", icon: "pi pi-ethereum", to: "/suite-requests-dashboard" },
+            { label: "Contracts", icon: "pi pi-book", to: "/blockchain/contracts" },
+          ] 
+        } 
+      ]
+    },
+    
+    
     { label: "Policies", icon: "pi pi-lock", to: "/set-policies" },
-    { label: "Settings", icon: "pi pi-cog", to: "/parametrics" }
+    { label: "Settings", icon: "pi pi-cog", to: "/parametrics" },
 
   ];
   const getInitialExpanded = (items) => {
@@ -115,7 +167,7 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
     return items.map((item, idx) => {
       const hasChildren = !!item.children;
       const isExpanded = expanded[item.label];
-      const paddingLeft = `${1 + level * 1.25}rem`;
+      const paddingLeft = `${1 + level * 1.5}rem`;
 
       return (
         <li key={item.label + idx}>
@@ -133,7 +185,7 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
                 <i className={`pi ${isExpanded ? "pi-chevron-up" : "pi-chevron-down"}`} />
               </div>
               {isExpanded && (
-                <ul className="list-none pl-0 ml-1 mt-1">
+                <ul className="list-none pl-0 ml-3">
                   {renderMenuItems(item.children, level + 1)}
                 </ul>
               )}
@@ -220,9 +272,7 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
           </div>
         )}
 
-
       >
- 
 
         {/* Navigation */}
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -230,20 +280,16 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
           <>
         
           {/* Navigation - scrollable */}
-          <div style={{ flexGrow: 1, overflowY: 'auto' }}>
-            <ul className="list-none px-1 mb-1">
-              {links.map((item, index) =>
-                item.children ? (
-                  renderMenuItems(item.children)
-                ) : (
-                  renderMenuItems([item])
-                )
-              )}
-            </ul>
-          </div>
+          <div style={{ flexGrow: 1, overflowY: "auto" }}>
+          <ul className="list-none sidebar-nav-list">
+            {links.map((item) =>
+              item.children ? renderMenuItems(item.children) : renderMenuItems([item])
+            )}
+          </ul>
+        </div>
 
           {/* Footer */}
-          <div className="px-1 border-top-1 surface-border pt-3">
+          <div className="px-1 border-top-1 surface-border ">
             <div className="flex flex-column gap-1 mb-1">
               <div className="flex align-items-center gap-2">
               <Avatar
@@ -273,28 +319,119 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
                     className="p-button-rounded p-button-text p-button-sm"
                     style={{ color: "#3498db" }}
                     tooltip="Notifications"
+                    onClick={(e) => notifPanelRef.current?.toggle(e)}
                   />
-                  <Badge
-                    value="2"
-                    style={{
-                      position: "absolute",
-                      top: "-2px",
-                      right: "-2px",
-                      backgroundColor: isDarkMode ? "#e74c3c" : "#dc3545",
-                      color: "#fff",
-                      fontSize: "0.65rem",
-                      height: "1rem",
-                      minWidth: "1rem",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: "50%",
-                      border: isDarkMode ? "1px solid #fff" : "none",
-                      padding: "0 0.3rem",
-                      lineHeight: "1rem"
-                    }}
-                  />
+                  {unreadCount > 0 && (
+                    <Badge
+                      value={unreadCount > 99 ? "99+" : unreadCount}
+                      style={{
+                        position: "absolute",
+                        top: "-2px",
+                        right: "-2px",
+                        backgroundColor: isDarkMode ? "#e74c3c" : "#dc3545",
+                        color: "#fff",
+                        fontSize: "0.65rem",
+                        height: "1rem",
+                        minWidth: "1rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "50%",
+                        border: isDarkMode ? "1px solid #fff" : "none",
+                        padding: "0 0.3rem",
+                        lineHeight: "1rem",
+                      }}
+                    />
+                  )}
+                  <OverlayPanel
+                    ref={notifPanelRef}
+                    dismissable
+                    showCloseIcon
+                    className="p-shadow-4"
+                    style={{ minWidth: "18rem", maxWidth: "22rem" }}
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-sm">Notifications</span>
+                      {unreadCount > 0 && (
+                        <Button
+                          className="p-button-text p-button-sm text-xs"
+                          icon="pi pi-check"
+                          label="Mark all as read"
+                          onClick={markAllAsRead}
+                          tooltip="Mark all notifications as read"
+                          tooltipOptions={{ position: "top" }}
+                        />
+                      )}
+                    </div>
 
+                    {notifLoading && (
+                      <div className="text-xs text-muted">Loading…</div>
+                    )}
+
+                    {!notifLoading && notifications.length === 0 && (
+                      <div className="text-xs text-muted">No notifications yet.</div>
+                    )}
+
+                    {!notifLoading && notifications.length > 0 && (
+                      <div
+                        style={{
+                          maxHeight: "260px",
+                          overflowY: "auto",
+                          paddingRight: "0.25rem",
+                        }}
+                      >
+                      {notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          className="flex justify-between items-start mb-2 p-2 border-round"
+                          style={{
+                            backgroundColor: n.is_read
+                              ? (isDarkMode ? "#2c2f33" : "#f8f9fa")
+                              : (isDarkMode ? "#3a3f44" : "#e9f5ff"),
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            // ✅ ONLY open dialog
+                            setSelectedNotif(n);
+                            setNotifDialogOpen(true);
+                          }}
+                        >
+                          <div className="flex flex-column gap-1 text-xs">
+                            <span style={{ fontWeight: n.is_read ? 400 : 600 }}>
+                              {renderNotificationLabel(n)}
+                            </span>
+                            {n.network && (
+                              <span className="text-muted">
+                                {n.network} · {n.contract_address?.slice(0, 8)}…
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex align-items-center gap-2">
+                            {!n.is_read && (
+                              <>
+                                <i
+                                  className="pi pi-circle-fill"
+                                  style={{ fontSize: "0.5rem", color: "#2ecc71" }}
+                                />
+                                <Button
+                                  icon="pi pi-check"
+                                  className="p-button-text p-button-sm"
+                                  tooltip="Mark as read"
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // ✅ prevents opening dialog
+                                    markAsRead(n.id);    // ✅ mark read ONLY when button clicked
+                                  }}
+                                />
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      </div>
+                    )}
+                  </OverlayPanel>
                 </div>
 
               </div>
@@ -381,6 +518,30 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
 
         </div>
       </Sidebar>
+      <NotificationDetailsDialog
+        visible={notifDialogOpen}
+        notification={selectedNotif}
+        isDarkMode={isDarkMode}
+        className="notifications-dialog"
+        contentClassName="notif-scroll"
+        renderLabel={renderNotificationLabel}
+        onHide={() => {
+          setNotifDialogOpen(false);
+          setSelectedNotif(null);
+        }}
+        openInExplorer={openInExplorer}
+        onMarkAsRead={async () => {
+          if (!selectedNotif) return;
+
+          await markAsRead(selectedNotif.id);
+
+          // keep dialog in sync
+          setSelectedNotif((prev) =>
+            prev ? { ...prev, is_read: true, read_at: new Date().toISOString() } : prev
+          );
+        }}
+      />
+
     </>
   );
 };
