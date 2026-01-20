@@ -2,6 +2,8 @@ import json
 import re
 import inspect
 import pandas as pd
+from typing import Any, Dict, List, Tuple
+from typing import Optional, Union
 
 from great_expectations.expectations.registry import (
     list_registered_expectation_implementations,
@@ -308,8 +310,51 @@ def build_expectations_grouped(categorized_metadata, df: pd.DataFrame):
 
     return per_column_result, table_expectations, column_names
 
+def _doc_first_line(exp_class) -> str:
+    doc = getattr(exp_class, "__doc__", None) or ""
+    return (doc.strip().split("\n")[0]) if doc else ""
 
+def build_metadata_index() -> Dict[str, Dict[str, str]]:
+    """
+    Flat index:
+      { "expect_column_values_to_not_be_null": {"description": "...", "category": "completeness"} }
+    """
+    index: Dict[str, Dict[str, str]] = {}
 
+    for name in list_registered_expectation_implementations():
+        try:
+            exp_class = get_expectation_impl(name)
+            doc = _doc_first_line(exp_class) or "No description available."
+            _, subcat = categorize_expectation(name, doc)
+            index[name] = {"description": doc, "category": subcat}
+        except Exception:
+            # keep entry minimal; HTML builder can still show the raw type
+            index[name] = {"description": "", "category": ""}
+
+    return index
+
+def extract_expectation_descriptions(
+    expectations: List[Dict[str, Any]],
+    meta_index: Optional[Dict[str, Dict[str, str]]] = None
+) -> Dict[str, Dict[str, str]]:
+    """
+    Given a list of expectation configs [{expectation_type, kwargs}], return:
+      { expectation_type: {description, category} }
+    """
+    if meta_index is None:
+        meta_index = build_metadata_index()
+
+    out: Dict[str, Dict[str, str]] = {}
+    for e in expectations or []:
+        et = e.get("expectation_type")
+        if not et:
+            continue
+        meta = meta_index.get(et) or {}
+        out[et] = {
+            "description": meta.get("description", "") or "",
+            "category": meta.get("category", "") or "",
+        }
+    return out
 
 
 
