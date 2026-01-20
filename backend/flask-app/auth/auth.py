@@ -48,7 +48,7 @@ def ensure_user_exists(user_info):
             sub=sub,
             username=user_info.get("preferred_username", "unknown"),
             email=user_info.get("email"),
-            public_key=None  # Can be updated later
+            public_key=None 
         )
         db.session.add(user)
         db.session.commit()
