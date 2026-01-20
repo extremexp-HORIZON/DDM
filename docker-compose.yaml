@@ -38,6 +38,7 @@ services:
     networks:
       - app_network
 
+
   # Backend service (Flask app)
   backend:
     build:
@@ -72,6 +73,10 @@ services:
       context: ./backend/flask-app
       dockerfile: Dockerfile.celery
     env_file: ./backend/flask-app/.env  # Load environment variables
+    environment:
+      - RUN_COMPILE_DEPLOY_ON_STARTUP=1
+      - DEFAULT_NETWORK=sepolia
+    # - ALWAYS_REDEPLOY=1
     depends_on:
       - backend
       - db
@@ -80,7 +85,34 @@ services:
     networks:
       app_network:
         ipv4_address: 192.168.10.10
-    command: ["celery", "-A", "make_celery", "worker", "--concurrency=4", "--loglevel=info", "-P", "eventlet"]
+    command: ["celery", "-A", "make_celery:celery_app", "worker", "--concurrency=4", "--loglevel=info", "-P", "eventlet", "-E"]
+
+
+  celery-beat:
+    build:
+      context: ./backend/flask-app
+      dockerfile: Dockerfile.celery
+    env_file: ./backend/flask-app/.env
+    environment:
+      - RUN_COMPILE_DEPLOY_ON_STARTUP=1
+      - DEFAULT_NETWORK=sepolia
+    depends_on:
+      - backend
+      - db
+    volumes:
+      - ./backend/flask-app/uploads:/app/uploads
+      - ./backend/flask-app/compiled_contracts:/app/compiled_contracts
+      - ./backend/flask-app/celerybeat:/app/celerybeat   # persist schedule (optional)
+    networks:
+      app_network:
+        ipv4_address: 192.168.10.16
+    command:
+      [
+        "celery",
+        "-A", "make_celery:celery_app",  
+        "beat",
+        "-l", "info"
+      ]
 
 
   # PostgreSQL Database service
