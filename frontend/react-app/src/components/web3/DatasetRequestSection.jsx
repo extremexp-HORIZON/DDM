@@ -4,6 +4,7 @@ import SuiteCard from "./SuiteCard";
 import { Button } from "primereact/button";
 import { Tag } from "primereact/tag";
 import { shortAddr, formatArgValue, getExplorerAddressUrl, openInExplorer } from "../../utils/web3DashboardUtils";
+import { useNavigate } from "react-router-dom";
 
 const renderRegistryEventsTable = (events, emptyLabel, activeFilter) => {
   if (!events || events.length === 0) {
@@ -127,6 +128,7 @@ export default function DatasetRequestSection({
     () => countByName(requestEvents || []),
     [requestEvents]
   );
+  const navigate = useNavigate();
 
   if (!suiteContract && !loadingSuites) return null;
 
@@ -180,7 +182,7 @@ export default function DatasetRequestSection({
                   className="p-button-text p-button-sm"
                   icon="pi pi-plus-circle"
                   label="Register suite"
-                  onClick={() => notImplemented?.("Register suite")}
+                  onClick={() => navigate("/set-expectations")}
                 />
               </div>
             </div>
