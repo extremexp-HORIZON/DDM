@@ -1,0 +1,38 @@
+/* Flexible one-row toolbar */
+.filters-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  --ctrl-h: 40px;   /* control height */
+}
+
+/* every child grows equally and shrinks as needed */
+.filters-row > * {
+  flex: 1 1 0;
+  min-width: 140px; /* prevent collapsing too small; tweak as needed */
+}
+
+/* unify heights */
+.filters-row .p-inputtext,
+.filters-row .p-inputnumber-input,
+.filters-row .p-multiselect,
+.filters-row .p-calendar .p-inputtext {
+  height: var(--ctrl-h);
+}
+
+/* vertically center MultiSelect label/chips and keep single-line */
+.filters-row .p-multiselect .p-multiselect-label {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* keep InputNumber input full width inside its wrapper */
+.filters-row .p-inputnumber .p-inputtext {
+  width: 100%;
+  height: var(--ctrl-h);
+}
