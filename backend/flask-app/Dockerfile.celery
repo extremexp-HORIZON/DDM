@@ -1,26 +1,27 @@
-# Celery Dockerfile
-
 FROM python:3.9-slim
-
 WORKDIR /app
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential libpq-dev curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
 COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Celery with Eventlet support
 RUN pip install "celery[sqlalchemy]" eventlet
 
-COPY . /app
+# IMPORTANT: solcx install folder must be a DIRECTORY
+ENV SOLCX_BINARY_PATH=/opt/solcx
+RUN mkdir -p /opt/solcx
 
-# Expose ports if necessary
+# Download solc into that folder with the name solcx expects
+ENV SOLC_VERSION=0.8.20
+RUN curl -L -o /opt/solcx/solc-v${SOLC_VERSION} \
+    https://github.com/ethereum/solidity/releases/download/v${SOLC_VERSION}/solc-static-linux \
+    && chmod +x /opt/solcx/solc-v${SOLC_VERSION} \
+    && ln -sf /opt/solcx/solc-v${SOLC_VERSION} /usr/local/bin/solc \
+    && /usr/local/bin/solc --version
+
+COPY . /app
 EXPOSE 5001
 
-# Start Celery worker with Eventlet
-CMD ["celery", "-A", "make_celery", "worker", "--concurrency=4", "--loglevel=info", "-P", "eventlet"]
+CMD ["celery", "-A", "make_celery", "worker", "--concurrency=4", "--loglevel=info", "-P", "eventlet", "-E"]
