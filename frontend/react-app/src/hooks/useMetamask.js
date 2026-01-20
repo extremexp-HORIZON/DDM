@@ -49,7 +49,8 @@ export const useMetamask = () => {
 
       const address = accounts[0];
       setWallet(address);
-      fetchBalance(address);
+      await fetchBalance(address);
+      return address;
     } catch (err) {
       if (err.code === 4902) {
         setError("Sepolia network not found. Please add it manually.");
