@@ -16,18 +16,36 @@ def result(id: str) -> dict[str, object]:
     }
 
 
+def _bytes_to_hex(obj):
+    """Only convert bytes → 0x… recursively; leave everything else untouched."""
+    if isinstance(obj, bytes):
+        return "0x" + obj.hex()
+    if isinstance(obj, dict):
+        return {k: _bytes_to_hex(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_bytes_to_hex(x) for x in obj]
+    return obj
+
 @view_tasks_bp.get("/status/<task_id>")
 def get_task_status(task_id):
     task = AsyncResult(task_id)
 
     if task.state == "PENDING":
         return jsonify({"state": "PENDING", "message": "Task is still in progress."})
-    elif task.state == "SUCCESS":
-        return jsonify({"state": "SUCCESS", "result": task.result})
-    elif task.state == "FAILURE":
-        return jsonify({"state": "FAILURE", "error": str(task.info)})
-    else:
-        return jsonify({"state": task.state, "message": "Task is in an unknown state."})
-    
 
+    if task.state == "SUCCESS":
+        try:
+            return jsonify({"state": "SUCCESS", "result": task.result})
+        except TypeError:
+            # Only if it fails (e.g., bytes inside), convert bytes → hex
+            safe_result = _bytes_to_hex(task.result)
+            return jsonify({"state": "SUCCESS", "result": safe_result})
+
+    if task.state == "FAILURE":
+        try:
+            return jsonify({"state": "FAILURE", "error": str(task.info)}), 500
+        except TypeError:
+            return jsonify({"state": "FAILURE", "error": _bytes_to_hex(str(task.info))}), 500
+
+    return jsonify({"state": task.state, "message": "Task is in an unknown state."})
     
