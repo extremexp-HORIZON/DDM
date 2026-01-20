@@ -20,8 +20,8 @@ import SetExpectations from "./pages/SetExpectations";
 import ValidationsResults from "./pages/ValidationsResults";
 import ValidationViewerPage from "./pages/ValidationViewerPage";
 import ReportViewerPage from "./pages/ReportViewerPage";
+import BlockchainContracts from "./pages/BlockchainContracts";
 import Parametrics from "./pages/Parametrics";
-
 import "./styles/layout.css";
 import "./styles/global.css";
 import "primeicons/primeicons.css";
