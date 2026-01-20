@@ -4,6 +4,7 @@ import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dropdown } from "primereact/dropdown";
 import { Tooltip } from "primereact/tooltip";
+import { Button } from "primereact/button";
 import { formatDate } from "../utils/dateFormatter";
 import { itemTemplate } from "../utils/categoryOptions";
 import { fileTypeItemTemplate } from "../utils/icons";
@@ -18,6 +19,32 @@ import {
     renderArguments,
     renderExpectationType
 } from "../utils/expectationHelpers";
+import Big from "big.js";
+
+const shortAddr = (addr = "") =>
+  addr ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : "—";
+
+const explorerAddressUrl = (network, address) => {
+  if (!network || !address) return null;
+  if (network === "mainnet") return `https://etherscan.io/address/${address}`;
+  return `https://${network}.etherscan.io/address/${address}`;
+};
+
+const formatDeadline = (unix) => {
+  if (!unix) return "—";
+  return new Date(unix * 1000).toLocaleString();
+};
+
+const formatEth = (weiStr) => {
+  if (!weiStr) return "—";
+  try {
+    const v = Big(weiStr);
+    const eth = Number(v) / 1e18;
+    return `${eth.toFixed(4)} ETH`;
+  } catch {
+    return weiStr;
+  }
+};
 
 
 const ExpectationSuiteViewer = ({ suite, loading = false }) => {
@@ -32,6 +59,7 @@ const ExpectationSuiteViewer = ({ suite, loading = false }) => {
             </div>
         );
     }
+    const shortAddr = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
     const expectations = suite.expectations || [];
     const meta = {
@@ -65,6 +93,7 @@ const ExpectationSuiteViewer = ({ suite, loading = false }) => {
             (!selectedColumnCategory || category === selectedColumnCategory);
     });
 
+    
          
     return (
         <div className={`p-4`}>
@@ -73,32 +102,119 @@ const ExpectationSuiteViewer = ({ suite, loading = false }) => {
             <Tooltip target=".expectation-doc-link" position="top" />
 
             {/* Suite info */}
+
             <div style={{ margin: "2rem 0" }}>
-                <Card>
-                    <h3 style={{ marginBottom: "1.5rem" }}>{suite.suite_name}</h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}>
-                        <div style={{ flex: 1, minWidth: "300px" }}>
-                            <div><strong>Description</strong><div>{suite.description || "—"}</div></div>
-                            <div><strong>Category</strong><div>{itemTemplate({ value: suite.category })}</div></div>
-                            <div>
-                                <strong>File Types</strong>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                                    {suite.file_types?.map((type, idx) => (
-                                        <div key={idx}>
-                                            {fileTypeItemTemplate({ value: type })}
-                                        </div>
-                                    )) || "—"}
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{ flex: 1, minWidth: "200px" }}>
-                            <div><strong>User</strong><div>{suite.user_id}</div></div>
-                            <div><strong>Created</strong><div>{formatDate(suite.created)}</div></div>
-                        </div>
-   
+            <Card>
+                <h3 style={{ marginBottom: "1.5rem" }}>{suite.suite_name}</h3>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "2rem" }}>
+                <div style={{ flex: 1, minWidth: "300px" }}>
+                    <div>
+                    <strong>Description</strong>
+                    <div>{suite.description || "—"}</div>
                     </div>
-                </Card>
+                    <div>
+                    <strong>Category</strong>
+                    <div>{itemTemplate({ value: suite.category })}</div>
+                    </div>
+                    <div>
+                    <strong>File Types</strong>
+                    <div
+                        style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.5rem",
+                        marginTop: "0.25rem",
+                        }}
+                    >
+                        {suite.file_types?.length
+                        ? suite.file_types.map((type, idx) => (
+                            <div key={idx}>{fileTypeItemTemplate({ value: type })}</div>
+                            ))
+                        : "—"}
+                    </div>
+                    </div>
+                </div>
+
+                <div style={{ flex: 1, minWidth: "260px" }}>
+                    <div>
+                    <strong>User</strong>
+                    <div>{suite.user_id}</div>
+                    </div>
+                    <div>
+                    <strong>Created</strong>
+                    <div>{formatDate(suite.created)}</div>
+                    </div>
+
+                    {/* ⬇️ on-chain dataset requests if present */}
+    
+                    {Array.isArray(suite.onchain_requests) && suite.onchain_requests.length > 0 && (
+                    <div style={{ marginTop: "1rem" }}>
+                        <strong>On-chain Dataset Requests</strong>
+                        <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.4rem",
+                            marginTop: "0.4rem",
+                        }}
+                        >
+                        {suite.onchain_requests.map((req, idx) => {
+                            const statusLabel = req.is_closed ? "Closed" : "Open";
+                            const addrUrl = explorerAddressUrl(req.network, req.contract_address);
+
+                            return (
+                            <div
+                                key={`${req.network}-${req.contract_address}-${req.suite_id}-${idx}`}
+                                style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "0.5rem",
+                                borderRadius: "6px",
+                                padding: "0.35rem 0.5rem",
+                                border: "1px solid rgba(148, 163, 184, 0.4)",
+                                fontSize: "0.8rem",
+                                }}
+                            >
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                <span>
+                                    <strong>{req.network}</strong> · suiteId #{req.suite_id}
+                                </span>
+                                <span title={req.contract_address}>
+                                    {shortAddr(req.contract_address)}
+                                </span>
+                                <span style={{ opacity: 0.8 }}>
+                                    {statusLabel} · claims: {req.total_claims ?? 0}
+                                </span>
+                                <span style={{ opacity: 0.8 }}>
+                                    bounty: {formatEth(req.bounty_wei)} · deadline:{" "}
+                                    {formatDeadline(req.deadline)}
+                                </span>
+                                </div>
+
+                                {addrUrl && (
+                                <Button
+                                    icon="pi pi-external-link"
+                                    className="p-button-text p-button-sm"
+                                    tooltip="Open contract in explorer"
+                                    tooltipOptions={{ position: "top" }}
+                                    onClick={() =>
+                                    window.open(addrUrl, "_blank", "noopener,noreferrer")
+                                    }
+                                />
+                                )}
+                            </div>
+                            );
+                        })}
+                        </div>
+                    </div>
+                    )}
+
+                </div>
+                </div>
+            </Card>
             </div>
+
 
 
             {/* Table Expectations */}
