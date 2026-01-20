@@ -1,5 +1,5 @@
 import axios from "axios";
-import {BASE_URL, defaultHeaders} from "./base";
+import {BASE_URL} from "./base";
 
 export const PARAMETRICS_API = {
 
@@ -7,7 +7,10 @@ export const PARAMETRICS_API = {
     try {
       const response = await axios.get(`${BASE_URL}/parametrics/df-supported-file-types`,
         {
-          headers: defaultHeaders.json,
+        headers: {
+          "Content-Type": "application/json" ,
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
         }
       );
       return response.data;
@@ -21,7 +24,8 @@ export const PARAMETRICS_API = {
       const response = await axios.get(`${BASE_URL}/parametrics/all-supported-file-types`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json" ,
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
           },
         });
       return response.data;
