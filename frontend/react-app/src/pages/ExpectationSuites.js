@@ -12,6 +12,12 @@ import { itemTemplate } from '../utils/categoryOptions';
 import { Button } from "primereact/button"; 
 import { getFileIconFromExt } from "../utils/icons";
 import ExpecationSuiteViewerDialog from "../components/ExpectationSuiteViewerDialog";
+import SuiteRegisterDialog from "../components/SuiteRegisterDialog";
+import { Dialog } from "primereact/dialog";
+import { Tag } from "primereact/tag"; 
+import Big from "big.js";
+
+
 
 const fileTypesWithIconsTemplate = (rowData) => {
   if (!rowData.file_types?.length) return null;
@@ -45,11 +51,42 @@ const fileTypesWithIconsTemplate = (rowData) => {
   );
 };
 
+const formatEth = (weiStr) => {
+  if (!weiStr) return "-";
+  try {
+    const v = Big(weiStr);
+    const eth = Number(v) / 1e18;
+    return `${eth.toFixed(4)} ETH`;
+  } catch {
+    return weiStr;
+  }
+};
+
+const explorerAddressUrl = (network, address) => {
+  if (!network || !address) return null;
+  if (network === "mainnet") {
+    return `https://etherscan.io/address/${address}`;
+  }
+  return `https://${network}.etherscan.io/address/${address}`;
+};
+
 
 const ExpectationSuites = () => {
   const { isDarkMode } = useTheme();
   const toast = useToast();
   const tooltipRef = useRef(null);
+  const [onchainDialogVisible, setOnchainDialogVisible] = useState(false);
+  const [onchainDialogSuite, setOnchainDialogSuite] = useState(null); // whole row
+  const [onchainDialogRequests, setOnchainDialogRequests] = useState([]);
+  const handleOnchainClick = (rowData) => {
+    const reqs = Array.isArray(rowData.onchain_requests)
+      ? rowData.onchain_requests
+      : [];
+    setOnchainDialogSuite(rowData);
+    setOnchainDialogRequests(reqs);
+    setOnchainDialogVisible(true);
+  };
+
 
   const [filters, setFilters] = useState({
     suite_name: [],
@@ -60,6 +97,24 @@ const ExpectationSuites = () => {
     created_from: null,
     created_to: null,
   });
+  const [requestDlgOpen, setRequestDlgOpen] = useState(false);
+  const [requestSuitePayload, setRequestSuitePayload] = useState(null);
+
+  const openRequestDialogForRow = (rowData) => {
+    // Build suitePayload from rowData shape (adjust as needed)
+    const payload = {
+      name: rowData?.suite_name || "",
+      description: rowData?.use_case || "",
+      category: rowData?.category || "mobility",
+      fileFormats: rowData?.file_types || [],
+      expectations: rowData?.expectations || [],
+      tableExpectations: rowData?.tableExpectations || [],
+      selectedExpectations: rowData?.selectedExpectations || [],
+    };
+    setRequestSuitePayload(payload);
+    setRequestDlgOpen(true);
+  };
+
 
   const [selectedFileTypes, setSelectedFileTypes] = useState([]);
   const [viewDialogVisible, setViewDialogVisible] = useState(false);
@@ -191,6 +246,14 @@ const ExpectationSuites = () => {
                 tooltip="View details"
                 tooltipOptions={{ position: "top" }}
               />
+              
+              <Button
+                icon="pi pi-send"
+                className="p-button-sm p-button-help p-button-text"
+                onClick={() => openRequestDialogForRow(rowData)}
+                tooltip="Prepare / Create on-chain"
+                tooltipOptions={{ position: "top" }}
+              />
               <Button
                 icon="pi pi-download"
                 className="p-button-sm p-button-success p-button-text"
@@ -214,20 +277,133 @@ const ExpectationSuites = () => {
                 tooltip="Copy ID"
                 tooltipOptions={{ position: "top" }}
               />
+             {Array.isArray(rowData.onchain_requests) &&
+                rowData.onchain_requests.length > 0 && (
+                  <Button
+                    icon="pi pi-link"
+                    className="p-button-sm p-button-warning p-button-text"
+                    onClick={() => handleOnchainClick(rowData)}
+                    tooltip="View linked on-chain requests"
+                    tooltipOptions={{ position: "top" }}
+                  />
+              )}
             </div>
           )}
           frozen
           alignFrozen="right"
-          style={{ width: "9.5rem" }}
+          style={{ width: "10rem" }}
         />
 
       </DataTable>
+      <SuiteRegisterDialog
+        visible={requestDlgOpen}
+        onHide={() => setRequestDlgOpen(false)}
+        network="sepolia"
+        suitePayload={requestSuitePayload || {}}
+        initialCategoryKey={requestSuitePayload?.category || "mobility"}
+        initialFileFormatKey={(requestSuitePayload?.fileFormats?.[0] || "csv")}
+        initialBountyEth={0.05}
+        initialTotalExpected={10}
+        // Here you can choose to allow only backend prepare:
+        enableBackend={true}
+        enableOnchain={true}  
+        onPrepared={() => {
+          // optional toast
+        }}
+      />
       <ExpecationSuiteViewerDialog
         visible={viewDialogVisible}
         onHide={() => setViewDialogVisible(false)}
         suite={selectedSuite}
         isDarkMode={isDarkMode}
       />
+      <Dialog
+        header={
+          onchainDialogSuite
+            ? `On-chain Requests for “${onchainDialogSuite.suite_name}”`
+            : "On-chain Requests"
+        }
+        visible={onchainDialogVisible}
+        style={{ width: "40rem", maxWidth: "90vw" }}
+        modal
+        onHide={() => setOnchainDialogVisible(false)}
+        contentStyle={{ maxHeight: "70vh", overflowY: "auto" }}
+      >
+        {!onchainDialogRequests?.length && (
+          <p>No on-chain requests found for this suite.</p>
+        )}
+
+        {onchainDialogRequests?.map((r, idx) => {
+          const addrUrl = explorerAddressUrl(r.network, r.contract_address);
+          const isClosed = !!r.is_closed;
+          const deadlineDate =
+            r.deadline ? new Date(r.deadline * 1000).toLocaleString() : "-";
+
+          return (
+            <div
+              key={`${r.network}-${r.contract_address}-${r.suite_id || idx}`}
+              style={{
+                border: "1px solid var(--surface-border, #ddd)",
+                borderRadius: 8,
+                padding: "0.75rem 1rem",
+                marginBottom: "0.75rem",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>
+                  Request ID: {r.suite_id ?? "-"}
+                </div>
+                <Tag
+                  value={isClosed ? "Closed" : "Open"}
+                  severity={isClosed ? "danger" : "success"}
+                />
+              </div>
+
+              <div style={{ fontSize: "0.9rem", lineHeight: 1.5 }}>
+                <div>
+                  <strong>Network:</strong> {r.network}
+                </div>
+                <div>
+                  <strong>Contract:</strong>{" "}
+                  {addrUrl ? (
+                    <a
+                      href={addrUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ textDecoration: "underline" }}
+                    >
+                      {r.contract_address}
+                    </a>
+                  ) : (
+                    r.contract_address
+                  )}
+                </div>
+                <div>
+                  <strong>Bounty:</strong> {formatEth(r.bounty_wei)}
+                </div>
+                <div>
+                  <strong>Total expected datasets:</strong>{" "}
+                  {r.total_expected ?? "-"}
+                </div>
+                <div>
+                  <strong>Deadline (on-chain):</strong> {deadlineDate}
+                </div>
+                <div>
+                  <strong>Total claims:</strong> {r.total_claims ?? 0}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </Dialog>
+
     </div>
   );
 };
