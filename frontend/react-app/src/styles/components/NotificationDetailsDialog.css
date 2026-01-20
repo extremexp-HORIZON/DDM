@@ -1,0 +1,160 @@
+/* ---------- Icon buttons (copy/navigate) ---------- */
+.tag-icon-btn {
+  padding: 0.25rem !important;
+  width: 2rem;
+  height: 2rem;
+  justify-content: center;
+}
+
+/* Optional: make them a tiny bit tighter */
+.notif-icon-actions .p-button {
+  border-radius: 8px;
+}
+
+/* Mark-as-read (eye) button style matches other icon buttons */
+.notif-mark-btn {
+  padding: 0.25rem !important;
+  width: 2rem;
+  height: 2rem;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* ---------- Payload layout ---------- */
+.notif-payload-kv {
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  background: #f4f4f4;
+}
+
+.dark-mode .notif-payload-kv {
+  background: #1e1e1e;
+}
+
+.notif-kv-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark-mode .notif-kv-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.notif-kv-key {
+  opacity: 0.9;
+}
+
+.notif-kv-text {
+  display: inline-block;
+  width: 100%;
+}
+
+/* Pretty PRE fallback (objects/arrays inside payload) */
+.notif-payload-pre {
+  max-height: 320px;
+  overflow: auto;
+  font-size: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: #f4f4f4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.dark-mode .notif-payload-pre {
+  background: #1e1e1e;
+}
+
+/* ---------- Dark scrollbars (Dialog + payload) ---------- */
+
+/* Firefox */
+.dark-mode .notifications-dialog .p-dialog-content,
+.dark-mode .notif-payload-kv,
+.dark-mode .notif-payload-pre {
+  scrollbar-color: #4b5563 transparent;
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.notifications-dialog .p-dialog-content::-webkit-scrollbar,
+.notif-payload-kv::-webkit-scrollbar,
+.notif-payload-pre::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notifications-dialog .p-dialog-content::-webkit-scrollbar-track,
+.notif-payload-kv::-webkit-scrollbar-track,
+.notif-payload-pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notifications-dialog .p-dialog-content::-webkit-scrollbar-thumb,
+.notif-payload-kv::-webkit-scrollbar-thumb,
+.notif-payload-pre::-webkit-scrollbar-thumb {
+  background-color: #9ca3af; /* light mode thumb */
+  border-radius: 9999px;
+}
+
+.dark-mode .notifications-dialog .p-dialog-content::-webkit-scrollbar-thumb,
+.dark-mode .notif-payload-kv::-webkit-scrollbar-thumb,
+.dark-mode .notif-payload-pre::-webkit-scrollbar-thumb {
+  background-color: #4b5563; /* dark mode thumb */
+}
+
+.dark-mode .notif-list-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.notif-list-scroll::-webkit-scrollbar { width: 6px; }
+.notif-list-scroll::-webkit-scrollbar-track { background: transparent; }
+.notif-list-scroll::-webkit-scrollbar-thumb { background-color: #9ca3af; border-radius: 9999px; }
+.dark-mode .notif-list-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; }
+
+
+/* PrimeReact Dialog content is the actual scroller */
+.dark-mode .notif-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.notif-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notif-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notif-scroll::-webkit-scrollbar-thumb {
+  background-color: #9ca3af;
+  border-radius: 9999px;
+}
+
+.dark-mode .notif-scroll::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+.notif-scroll::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+/* Firefox */
+.notif-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 transparent;
+}
+
+.notif-scroll::-webkit-scrollbar-thumb { background-color: #9ca3af; }
+body.dark-mode .notif-scroll::-webkit-scrollbar-thumb { background-color: #4b5563; }
+
+.notif-scroll { scrollbar-color: #9ca3af transparent; }
+body.dark-mode .notif-scroll { scrollbar-color: #4b5563 transparent; }
