@@ -1,0 +1,21 @@
+{
+  "name": "DDM Validation Badge",
+  "description": "Soulbound NFT awarded to the uploader of a dataset that successfully passed validation.",
+  "image": "ipfs://YOUR_ICON_CID/badge.png",
+  "external_url": "https://app.example.org/rewards/{tokenId}",
+  "animation_url": "",
+  "attributes": [
+    { "trait_type": "Category", "value": "{category}" },
+    { "trait_type": "Level", "value": "{level}" },
+    { "trait_type": "Dataset Fingerprint", "value": "{datasetFingerprint}" },
+    { "trait_type": "Suite Hash", "value": "{suiteHash}" },
+    { "trait_type": "File Format", "value": "{fileFormat}" },
+    { "trait_type": "Validated", "value": "true" }
+  ],
+  "properties": {
+    "dataset_uri": "{datasetURI}",
+    "validation_result_uri": "{resultURI}",
+    "validator_manifest_uri": "{validatorManifestURI}",
+    "issued_at": "{isoTimestamp}"
+  }
+}

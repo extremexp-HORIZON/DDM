@@ -1,0 +1,26 @@
+{
+  "name": "xxp-ddm-ethical-validator",
+  "description": "LLM-based ethical / privacy / fairness assessment of tabular datasets.",
+  "version": "1.0.0",
+  "validator_type": "ethical_assessment",
+  "implementation": {
+    "stack": "python",
+    "framework": "custom_llm_pipeline",
+    "service": "ddm-backend-ethics"
+  },
+  "contact": {
+    "team": "Ethics & Responsible AI",
+    "email": "ethics@xxp.com"
+  },
+  "policy": {
+    "requires_sample": true,
+    "max_sample_rows": 5000,
+    "timeout_seconds": 120,
+    "retries": 0
+  },
+  "metadata": {
+    "llm_provider": "Mistral 3.7",
+    "score_range": [0.0, 1.0],
+    "notes": "Produces an ethical score, label, and structured recommendations."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Mobility Badge — Level 1",
+  "description": "Awarded for submitting a mobility dataset that passed the declared expectation suite.",
+  "image": "ipfs://YOUR_ICON_CID/mobility.png",
+  "external_url": "https://app.example.org/rewards",
+  "attributes": [
+    { "trait_type": "Category", "value": "mobility" },
+    { "trait_type": "Level", "value": "LEVEL1" },
+    { "trait_type": "Validated", "value": "true" }
+  ],
+  "properties": {
+    "dataset_fingerprint": "0xFINGERPRINT",
+    "suite_hash": "0xSUITEHASH",
+    "file_format": "csv",
+    "dataset_uri": "ipfs://YOUR_DATASET_CID/data.csv",
+    "validation_result_uri": "ipfs://YOUR_RESULT_CID/result.json",
+    "validator_manifest_uri": "ipfs://YOUR_VALIDATOR_CID/validator-manifest.json",
+    "issued_at": "2025-10-26T12:00:00Z"
+  }
+}

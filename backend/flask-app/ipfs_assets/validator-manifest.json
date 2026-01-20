@@ -1,0 +1,31 @@
+{
+  "name": "DDM GE validator worker",
+  "version": "1.0.0",
+  "description": "Runs Great Expectations suites against uploaded datasets and posts results on-chain.",
+  "validator": {
+    "address": "0x11B1C48B2f084ff1b5E49eD872bf9A90092A899a",
+    "contact": "ops@extremexp.org"
+  },
+  "code": {
+    "repo": "https://github.com/extremexp-HORIZON/DDM/tree/main",
+    "docker": "ghcr.io/your-org/ddm-ge-validator:1.0.0",
+    "entrypoint": "python app.py",
+    "commit": "abcdef1234567890",
+    "artifact_hash_note": "The on-chain ValidatorsRegistry requires a bytes32. Provide VALIDATOR_CODE_HASH=0x... in .env or it will be derived as keccak(description|uri)."
+  },
+  "expectations": {
+    "framework": "great_expectations",
+    "suite_version": ">=0.18",
+    "supported_file_formats": ["csv", "xls", "parquet", "data"],
+    "notes": "Suites must be provided in canonical JSON (stable key order, no whitespace differences)."
+  },
+  "ui": {
+    "image": "ipfs://XXP_LOGO/validator.png",
+    "docs": "https://docs.example.org/ddm/validator"
+  },
+  "security": {
+    "signed_results": true,
+    "result_schema": "https://schemas.example.org/ddm/validation-result.schema.json"
+  },
+  "timestamp": 1730000000
+}

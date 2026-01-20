@@ -1,0 +1,17 @@
+{
+  "name": "Suite Request Receipt",
+  "description": "Proof of creating and funding a validation suite request.",
+  "image": "ipfs://YOUR_ICON_CID/receipt.png",
+  "external_url": "https://app.example.org/suites/{requestId}",
+  "attributes": [
+    { "trait_type": "Category", "value": "{category}" },
+    { "trait_type": "Total Expected", "value": "{totalExpected}" },
+    { "trait_type": "Deadline", "value": "{deadlineISO}" }
+  ],
+  "properties": {
+    "request_id": "{requestId}",
+    "suite_hash": "0xSUITEHASH",
+    "bounty_wei": "{bountyWei}",
+    "created_at": "{isoTimestamp}"
+  }
+}

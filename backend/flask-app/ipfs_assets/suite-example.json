@@ -1,0 +1,26 @@
+{
+  "suite_name": "mobility_minimal_suite",
+  "suite_version": "1.0.0",
+  "framework": "great_expectations",
+  "dataset_contract": {
+    "required_file_format": "csv",
+    "max_rows": 2000000
+  },
+  "expectations": [
+    {
+      "type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "vehicle_id" },
+      "strict": true
+    },
+    {
+      "type": "expect_column_values_to_be_between",
+      "kwargs": { "column": "speed_kmh", "min_value": 0, "max_value": 220 },
+      "strict": false
+    },
+    {
+      "type": "expect_table_row_count_to_be_between",
+      "kwargs": { "min_value": 1000, "max_value": 2000000 }
+    }
+  ],
+  "result_schema": "https://schemas.example.org/ddm/validation-result.schema.json"
+}

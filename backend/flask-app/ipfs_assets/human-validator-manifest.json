@@ -1,0 +1,23 @@
+{
+  "name": "human-review-validator",
+  "description": "Human-in-the-loop validator for manual review and overrides.",
+  "version": "1.0.0",
+  "validator_type": "human_review",
+  "implementation": {
+    "stack": "web_app",
+    "framework": "React/Flask (example)",
+    "service": "ddm-review-console"
+  },
+  "contact": {
+    "team": "Data Stewards",
+    "email": "data-stewards@example.com"
+  },
+  "policy": {
+    "requires_human": true,
+    "sla_hours": 24,
+    "max_parallel_reviews": 10
+  },
+  "metadata": {
+    "notes": "Used for high-risk or disputed datasets; decisions may override automated validators."
+  }
+}
