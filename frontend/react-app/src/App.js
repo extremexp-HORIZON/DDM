@@ -11,6 +11,9 @@ import ChunkUploader from "./pages/UploadChunks";
 import LinkUploader from "./pages/UploadLinks";
 import Catalog from "./pages/Catalog";
 import MyCatalog from "./pages/MyCatalog";
+import ExploreProjectsTable from "./pages/ExploreProjectsTable";
+import SuiteRequestsDashboard from "./pages/SuiteRequestsDashboard";
+import FileQueryBuilder from './pages/FileQueryBuilder';
 import ExpectationSuites from "./pages/ExpectationSuites";
 import SetPolicies from "./pages/SetPolicies";
 import SetExpectations from "./pages/SetExpectations";
@@ -50,6 +53,8 @@ function App() {
                     <Route path="/validation_results_viewer/:suiteId/:datasetId" element={<ValidationViewerPage/>}/>
                     <Route path="/report_viewer/:fileId" element={<ReportViewerPage/>}/>
                     <Route path="/parametrics" element={<Parametrics/>}/>
+                    <Route path="/blockchain/contracts" element={<BlockchainContracts />} />
+                    <Route path="/suite-requests-dashboard" element={<SuiteRequestsDashboard/>}/>
                   </Routes>
                 </Layout>
               </PrimeReactProvider>
