@@ -21,7 +21,7 @@ import ValidationsResults from "./pages/ValidationsResults";
 import ValidationViewerPage from "./pages/ValidationViewerPage";
 import ReportViewerPage from "./pages/ReportViewerPage";
 import Parametrics from "./pages/Parametrics";
-import ExploreProjectsTable from "./pages/ExploreProjectsTable";
+
 import "./styles/layout.css";
 import "./styles/global.css";
 import "primeicons/primeicons.css";
