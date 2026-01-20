@@ -168,7 +168,7 @@ def celery_init_app(app: Flask) -> Celery:
     celery_app.conf.beat_schedule = {
         "kick-scan-all-contracts-every-5-min": {
             "task": "tasks.chain.kick_scan_all_contracts",
-            'schedule': crontab(minute='*/5')
+            'schedule': crontab(hour="0,12", minute=0)
         },
     }
 
