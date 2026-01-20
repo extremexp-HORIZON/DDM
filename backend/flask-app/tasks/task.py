@@ -1,17 +1,14 @@
-
-import eventlet
-eventlet.monkey_patch()
 from celery import shared_task 
 from extensions.db import db
 from extensions.llm import llm
+from services.expectation_engine import run_expectation_suite, build_expectations_grouped,build_metadata
+from services.dataset_profiling import generate_profile_report
+from services.metadata_generator import generate_and_save_dataframe_metadata
 from utils.zenoh_file_handler import ZenohFileHandler,merge_file_chunks_from_zenoh,download_file_from_zenoh,save_processed_file
 from utils.file_df_loader import load_dataframe 
 from utils.file_helpers import  cleanup_files,load_dataframe_or_image, compute_file_hash, download_file_from_url, merge_metadata
 from utils.file_handler import get_file_record,update_file_record_in_db, store_file_metadata_in_db
 from utils.expectations_handler import save_validation_result, get_expectation_suite
-from services.expectation_engine import run_expectation_suite, build_expectations_grouped,build_metadata
-from services.dataset_profiling import generate_profile_report
-from services.metadata_generator import generate_and_save_dataframe_metadata
 from utils.user_file_logger import log_action_with_context
 import traceback
 import logging
