@@ -16,12 +16,13 @@ const StepFinalize = ({
   customCategory,
   selectedFileTypes,
   expectations,
+  setLoading,
 }) => {
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dlgOpen, setDlgOpen] = useState(false);
   const [txInfo, setTxInfo] = useState(null);
-
+  
   const toast = useToast();
   const showToast = (s, t, d) =>
     toast.current?.show({ severity: s, summary: t, detail: d, life: 6000 });
@@ -35,13 +36,16 @@ const StepFinalize = ({
   }, []);
 
   const handleSave = async () => {
-    setLoading(true);  
+    setSaving(true);
     try {
       const response = await saveExpectations();
-      if (response.success) {
+      if (response?.success) {
         setSubmitted(true);
-        await fetchSuite(res.suite_id);
+        await fetchSuite(response.suite_id);
       }
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Save failed", err?.message || "Could not save expectations");
     } finally {
       setSaving(false);
     }
