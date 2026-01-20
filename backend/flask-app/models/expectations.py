@@ -23,6 +23,7 @@ class ExpectationSuites(db.Model):
     use_case = db.Column(db.String(), nullable=True)
     column_descriptions = db.Column(JSONB, nullable=True)
     column_names = db.Column(JSONB, nullable=True)
+    suite_hash = db.Column(db.String(66), index=True, nullable=True)
     created = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     def __repr__(self):
@@ -43,6 +44,7 @@ class ExpectationSuites(db.Model):
             "id": self.id,
             "suite_name": self.suite_name,
             "datasource_name": self.datasource_name,
+            "suite_hash": self.suite_hash,
             "file_types": self.file_types,
             "expectations": self.expectations,
             "category": self.category,
