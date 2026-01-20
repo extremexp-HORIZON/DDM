@@ -39,6 +39,96 @@ export const USER_API = {
   });
 
   return URL.createObjectURL(response.data);
-}
+},
+
+
+fetchNotifications: async ({ onlyUnread = false, limit = 50 } = {}) => {
+    const params = new URLSearchParams();
+    if (onlyUnread) params.append("onlyUnread", "true");
+    if (limit) params.append("limit", String(limit));
+
+    const response = await axios.get(
+      `${BASE_URL}/users/user/notifications?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    // { data, total, unread }
+    return response.data;
+  },
+
+  markNotificationRead: async (id) => {
+    const response = await axios.post(
+      `${BASE_URL}/users/user/notifications/${id}/read`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  markAllNotificationsRead: async () => {
+    const response = await axios.post(
+      `${BASE_URL}/users/user/notifications/mark_all_read`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  fetchPreferredQueries: async ({ limit = 50 } = {}) => {
+      const response = await axios.get(
+        `${BASE_URL}/users/user/queries`,
+        {
+          params: { limit },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data; // { data: [...], total: n }
+    },
+
+    savePreferredQuery: async ({ name = null, query }) => {
+      const response = await axios.post(
+        `${BASE_URL}/users/user/queries`,
+        { name, query },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data; // { message, query: {...} }
+    },
+
+    deletePreferredQuery: async (id) => {
+      const response = await axios.post(
+        `${BASE_URL}/users/user/queries/${id}/delete`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data; // { message, id }
+    },
 
 };
