@@ -4,6 +4,7 @@ from celery import chain
 from tasks.task import build_expectations_task, build_column_descriptions_task, process_large_file
 from utils.zenoh_file_handler import ZenohFileHandler
 from models.expectations import ExpectationSuites
+from models.blockchain import OnchainDatasetRequest
 from utils.file_handler import save_file_record
 from utils.expectations_handler import save_expectation_suite
 from datetime import datetime, timezone
@@ -48,6 +49,46 @@ e_suite_model = expectations_ns.model('ExpectationSuite', {
     'use_case': fields.String(),
 })
 
+onchain_request_model = expectations_ns.model('OnchainDatasetRequestLite', {
+    'network': fields.String(description="Blockchain network, e.g. sepolia"),
+    'contract_address': fields.String(description="SuiteRequestRegistry address"),
+    'suite_id': fields.Integer(description="On-chain suiteId"),
+    'bounty_wei': fields.String(description="Total bounty in wei"),
+    'total_expected': fields.Integer(description="Expected number of datasets"),
+    'deadline': fields.Integer(description="Deadline (unix timestamp)"),
+    'is_closed': fields.Boolean(description="Whether suite is closed on-chain"),
+    'total_claims': fields.Integer(description="Number of RewardClaimed events"),
+})
+
+expectation_suite_response_model = expectations_ns.model('ExpectationSuiteResponse', {
+    'id': fields.String,
+    'suite_name': fields.String,
+    'datasource_name': fields.String,
+    'file_types': fields.Raw,
+    'expectations': fields.Raw,
+    'category': fields.String,
+    'description': fields.String,
+    'user_id': fields.String,
+    'column_descriptions': fields.Raw,
+    'column_names': fields.Raw,
+    'created': fields.String,
+    'expectation_descriptions': fields.Raw,
+    'has_onchain_request': fields.Boolean(
+        description="True if this suite has at least one on-chain dataset request"
+    ),
+    'onchain_requests': fields.List(
+        fields.Nested(onchain_request_model),
+        description="On-chain dataset requests linked to this suite"
+    ),
+})
+
+suite_list_response_model = expectations_ns.model('ExpectationSuiteListResponse', {
+    'data': fields.List(fields.Nested(expectation_suite_response_model)),
+    'total': fields.Integer,
+    'filtered_total': fields.Integer,
+    'page': fields.Integer,
+    'perPage': fields.Integer,
+})
 
 
 # 📌 Utility: Detect File Type
@@ -129,11 +170,11 @@ class UploadSample(Resource):
                 
 
 
-
 @expectations_ns.route('/suites')
 @expectations_ns.doc(security='oauth2')
 class ExpectationSuiteList(Resource):
     @expectations_ns.expect(expectation_suite_filter_parser)
+    @expectations_ns.marshal_with(suite_list_response_model)
     def get(self):
         """List all expectation suites with filters"""
         args = expectation_suite_filter_parser.parse_args()
@@ -150,21 +191,30 @@ class ExpectationSuiteList(Resource):
         per_page = args['perPage']
         suite_ids = args.get('suite_id') or []
 
-
         query = ExpectationSuites.query
 
         if suite_names:
-            query = query.filter(or_(*[ExpectationSuites.suite_name.ilike(f"%{v}%") for v in suite_names]))
+            query = query.filter(or_(*[
+                ExpectationSuites.suite_name.ilike(f"%{v}%") for v in suite_names
+            ]))
         if file_types:
-            query = query.filter(or_(*[ExpectationSuites.file_types.contains([ft]) for ft in file_types]))
+            query = query.filter(or_(*[
+                ExpectationSuites.file_types.contains([ft]) for ft in file_types
+            ]))
         if categories:
-            query = query.filter(or_(*[ExpectationSuites.category.ilike(f"%{v}%") for v in categories]))
+            query = query.filter(or_(*[
+                ExpectationSuites.category.ilike(f"%{v}%") for v in categories
+            ]))
         if use_cases:
-            query = query.filter(or_(*[ExpectationSuites.use_case.ilike(f"%{v}%") for v in use_cases]))
+            query = query.filter(or_(*[
+                ExpectationSuites.use_case.ilike(f"%{v}%") for v in use_cases
+            ]))
         if user_ids:
-            query = query.filter(or_(*[ExpectationSuites.user_id.ilike(f"%{v}%") for v in user_ids]))
+            query = query.filter(or_(*[
+                ExpectationSuites.user_id.ilike(f"%{v}%") for v in user_ids
+            ]))
         if suite_ids:
-            query = query.filter(ExpectationSuites.suite_id.in_(suite_ids))
+            query = query.filter(ExpectationSuites.id.in_(suite_ids))
 
         if created_from:
             try:
@@ -187,15 +237,50 @@ class ExpectationSuiteList(Resource):
         suites = query.offset((page - 1) * per_page).limit(per_page).all()
         total = ExpectationSuites.query.count()
 
+        suite_id_list = [s.id for s in suites]
+        onchain_rows = []
+        if suite_id_list:
+            onchain_rows = (
+                OnchainDatasetRequest.query
+                .filter(OnchainDatasetRequest.expectation_suite_id.in_(suite_id_list))
+                .all()
+            )
+
+        # group by expectation_suite_id
+        onchain_by_suite = {}
+        for r in onchain_rows:
+            onchain_by_suite.setdefault(r.expectation_suite_id, []).append(r)
+
+        data = []
+        for s in suites:
+            item = s.to_json()
+
+            linked = []
+            for r in onchain_by_suite.get(s.id, []):
+                linked.append({
+                    "network": r.network,
+                    "contract_address": r.contract_address,
+                    "suite_id": r.id,  # on-chain suiteId
+                    "bounty_wei": str(r.bounty_wei) if r.bounty_wei is not None else None,
+                    "total_expected": r.total_expected,
+                    "deadline": r.deadline,
+                    "is_closed": r.is_closed,
+                    "total_claims": r.total_claims,
+                })
+
+            item["onchain_requests"] = linked
+            item["has_onchain_request"] = bool(linked)
+            data.append(item)
+        # ------------------------------------------------------------
+
         return {
-            "data": [s.to_json() for s in suites],
+            "data": data,
             "total": total,
             "filtered_total": filtered_total,
             "page": page,
             "perPage": per_page,
         }
-
-
+    
 
     @expectations_ns.expect(e_suite_model)
     @expectations_ns.doc(security='oauth2')
@@ -224,9 +309,33 @@ class ExpectationSuiteList(Resource):
 @expectations_ns.route('/suites/<string:suite_id>')
 @expectations_ns.doc(security='oauth2')
 class ExpectationSuiteDetail(Resource):
+    @expectations_ns.marshal_with(expectation_suite_response_model)
     def get(self, suite_id):
         """Get details of an expectation suite"""
         suite = ExpectationSuites.query.get_or_404(suite_id)
-        return suite.to_json()   
+        data = suite.to_json()
 
+        # attach on-chain requests (if any)
+        onchain_rows = (
+            OnchainDatasetRequest.query
+            .filter_by(expectation_suite_id=suite.id)
+            .all()
+        )
 
+        linked = []
+        for r in onchain_rows:
+            linked.append({
+                "network": r.network,
+                "contract_address": r.contract_address,
+                "suite_id": r.id,
+                "bounty_wei": str(r.bounty_wei) if r.bounty_wei is not None else None,
+                "total_expected": r.total_expected,
+                "deadline": r.deadline,
+                "is_closed": r.is_closed,
+                "total_claims": r.total_claims,
+            })
+
+        data["onchain_requests"] = linked
+        data["has_onchain_request"] = bool(linked)
+
+        return data
