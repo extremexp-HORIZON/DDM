@@ -1,0 +1,32 @@
+/* ===== FileQueryBuilder: dark scrollbars for DataTable + pre blocks ===== */
+
+/* Only apply when you add "dark-theme" on the wrapper */
+.file-query-builder.dark-theme .p-datatable-wrapper,
+.file-query-builder.dark-theme .p-datatable .p-datatable-wrapper,
+.file-query-builder.dark-theme .p-datatable-scrollable-body,
+.file-query-builder.dark-theme .p-datatable-scrollable-body-table,
+.file-query-builder.dark-theme pre {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: #4b5563 transparent;  /* Firefox */
+}
+
+/* WebKit (Chrome/Edge/Safari) */
+.file-query-builder.dark-theme .p-datatable-wrapper::-webkit-scrollbar,
+.file-query-builder.dark-theme .p-datatable-scrollable-body::-webkit-scrollbar,
+.file-query-builder.dark-theme pre::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.file-query-builder.dark-theme .p-datatable-wrapper::-webkit-scrollbar-track,
+.file-query-builder.dark-theme .p-datatable-scrollable-body::-webkit-scrollbar-track,
+.file-query-builder.dark-theme pre::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.file-query-builder.dark-theme .p-datatable-wrapper::-webkit-scrollbar-thumb,
+.file-query-builder.dark-theme .p-datatable-scrollable-body::-webkit-scrollbar-thumb,
+.file-query-builder.dark-theme pre::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 9999px;
+}
