@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BASE_URL, defaultHeaders } from './base';
+import { BASE_URL} from './base';
 
 export const EXPECTATIONS_API = {
   uploadSample: (formData) =>
@@ -12,39 +12,60 @@ export const EXPECTATIONS_API = {
 
   save: (payload) =>
     axios.post(`${BASE_URL}/expectations/suites`, payload, {
-      headers: defaultHeaders.json,
+        headers: {
+          "Content-Type": "application/json" ,
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   getAllSuites: (params) =>
     axios.get(`${BASE_URL}/expectations/suites`, {
       params,
-      headers: defaultHeaders.json,
+        headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   getSuiteById: (suiteId) =>
     axios.get(`${BASE_URL}/expectations/suites/${suiteId}`, {
-      headers: defaultHeaders.json,
+        headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   getAllResults: (params) =>
     axios.get(`${BASE_URL}/expectations/results`, {
       params,
-      headers: defaultHeaders.json,
+        headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   getResultById: (resultId) =>
     axios.get(`${BASE_URL}/expectations/results/${resultId}`, {
-      headers: defaultHeaders.json,
+        headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   validateFilesAgainstSuite: (payload) =>
     axios.post(`${BASE_URL}/expectations/validate/files-against-suite`, payload, {
-      headers: defaultHeaders.json,
+       headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
 
   validateFileAgainstSuites: (payload) =>
     axios.post(`${BASE_URL}/expectations/validate/file-against-suites`, payload, {
-      headers: defaultHeaders.json,
+        headers: {
+        "Content-Type": "application/json" ,
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+      },
     }),
     
 };
