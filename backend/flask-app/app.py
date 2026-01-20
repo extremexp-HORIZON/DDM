@@ -1,12 +1,13 @@
-import eventlet
-eventlet.monkey_patch()
 from dotenv import load_dotenv
 from flask import Flask, Blueprint, request, jsonify
 from auth.auth import userAuthHandler, ensure_user_exists
 from celery import Celery, Task
+from celery.schedules import crontab
 from extensions.db import db
 from extensions.api import api
 from models import File
+from models.blockchain import DeployedContract, ContractEvent
+from models.ethics import DatasetEthicalAssessment
 from utils.ollama_util import wait_for_ollama_ready, ensure_mistral_loaded 
 from routes.file_routes import file_ns
 from routes.files_routes import files_ns
@@ -95,16 +96,30 @@ def create_app(config_object="config.Config"):
 
     # Create database tables if they don't exist
     with app.app_context():
+        #db.drop_all()
         db.create_all()
         from routes.task_routes import view_tasks_bp
-        from tasks.task import fetch_file_from_link,merge_chunks_task,process_large_file,build_expectations_task, build_column_descriptions_task
+        from tasks.task import (
+            fetch_file_from_link,
+            merge_chunks_task,
+            process_large_file,
+            build_expectations_task, 
+            build_column_descriptions_task
+        )
+        from tasks.chain import scan_events_task, kick_scan_all_contracts
+        from tasks.compile import compile_contracts_task
+        from tasks.rewards import prepare_dataset_reward_claim_task
+        from tasks.deploy import deploy_ddm_suite_task
+        from tasks.validation import build_onchain_validation_artifacts_task
+        from tasks.ethical_assessment import run_ethical_assessment_task
+        from tasks.bootstrap import kick_off
 
 
     app.register_blueprint(view_tasks_bp)
     celery_app = app.extensions['celery']
     celery_app.conf.timezone = 'UTC'  # Adjust this if you want a different timezone
-    wait_for_ollama_ready()
-    ensure_mistral_loaded()
+    # wait_for_ollama_ready()
+    # ensure_mistral_loaded()
 
     @app.before_request
     def global_auth():
@@ -143,5 +158,19 @@ def celery_init_app(app: Flask) -> Celery:
     celery_app.config_from_object(app.config["CELERY"])
     celery_app.set_default()
     app.extensions["celery"] = celery_app
+    celery_app.conf.timezone = "UTC"
+
+    # Add beat schedule here
+    celery_app.conf.beat_schedule = {
+        "kick-scan-all-contracts-every-5-min": {
+            "task": "tasks.chain.kick_scan_all_contracts",
+            'schedule': crontab(minute='*/5')
+        },
+    }
+
+    
+
+    celery_app.flask_app = app
+
     return celery_app
 
