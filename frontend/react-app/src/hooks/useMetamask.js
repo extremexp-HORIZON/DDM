@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Web3 from "web3";
 
 const SEPOLIA_CHAIN_ID = "0xaa36a7"; // 11155111 in hex
 
@@ -8,9 +9,14 @@ export const useMetamask = () => {
   const [balance, setBalance] = useState(null);
   const [error, setError] = useState(null);
 
+  // ✅ add web3 to state
+  const [web3, setWeb3] = useState(null);
+
   useEffect(() => {
     if (typeof window !== "undefined" && window.ethereum) {
       setIsAvailable(true);
+      // ✅ initialize early if you want
+      setWeb3(new Web3(window.ethereum));
     }
   }, []);
 
@@ -18,7 +24,7 @@ export const useMetamask = () => {
     try {
       const rawBalance = await window.ethereum.request({
         method: "eth_getBalance",
-        params: [address, "latest"]
+        params: [address, "latest"],
       });
 
       const eth = parseFloat(parseInt(rawBalance, 16) / 1e18).toFixed(4);
@@ -26,6 +32,17 @@ export const useMetamask = () => {
     } catch (err) {
       setBalance(null);
       console.error("Failed to fetch balance:", err);
+    }
+  };
+
+  // ✅ expose ensureSepolia since your dialog expects it
+  const ensureSepolia = async () => {
+    const chainId = await window.ethereum.request({ method: "eth_chainId" });
+    if (chainId?.toLowerCase() !== SEPOLIA_CHAIN_ID) {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: SEPOLIA_CHAIN_ID }],
+      });
     }
   };
 
@@ -38,17 +55,18 @@ export const useMetamask = () => {
     }
 
     try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: SEPOLIA_CHAIN_ID }]
-      });
+      await ensureSepolia();
 
       const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts"
+        method: "eth_requestAccounts",
       });
 
       const address = accounts[0];
       setWallet(address);
+
+      // ✅ make sure web3 exists after connect too
+      if (!web3) setWeb3(new Web3(window.ethereum));
+
       await fetchBalance(address);
       return address;
     } catch (err) {
@@ -63,14 +81,18 @@ export const useMetamask = () => {
   const disconnect = () => {
     setWallet(null);
     setBalance(null);
+    // optional:
+    // setWeb3(null);
   };
 
   return {
     isAvailable,
     wallet,
     balance,
+    web3,         
+    ensureSepolia, 
     connect,
     disconnect,
-    error
+    error,
   };
 };
