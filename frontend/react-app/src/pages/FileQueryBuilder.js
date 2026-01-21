@@ -204,7 +204,7 @@ const FileQueryBuilder = () => {
       <div className={`file-query-builder ${isDarkMode ? "dark-theme" : ""}`} style={{ padding: "2rem" }}>
         <Toast ref={toastRef} position="bottom-right" />
 
-        <h2>Build Filter for File Metadata</h2>
+        <h2>Create & Save Custom Queries</h2>
 
         <QueryBuilderDnD dnd={{ ...ReactDnD, ...ReactDndHtml5Backend }}>
           <QueryBuilderFluent>
