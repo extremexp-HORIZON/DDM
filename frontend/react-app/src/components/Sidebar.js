@@ -290,7 +290,7 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
 
           {/* Footer */}
           <div className="px-1 border-top-1 surface-border ">
-            <div className="flex flex-column gap-1 mb-1">
+            <div className="flex flex-column gap-1 mb-1 mt-2">
               <div className="flex align-items-center gap-2">
               <Avatar
                   image={profile?.profile_pic}
