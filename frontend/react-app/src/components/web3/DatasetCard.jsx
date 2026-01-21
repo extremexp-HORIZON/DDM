@@ -172,7 +172,7 @@ export default function DatasetCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 mt-2">
+      <div className="action-row gap-4 mt-3">
 
         <Button
           className="p-button-text p-button-sm tag-icon-btn btn-blue"
@@ -193,14 +193,14 @@ export default function DatasetCard({
         />
 
         <Button
-          className="p-button-text p-button-sm btn-green"
+          className="p-button-text p-button-sm tag-icon-btn btn-green"
           icon="pi pi-check-circle"
           onClick={onSubmitValidation}
           tooltip="Submit validation"
           tooltipOptions={{ position: "top" }}
         />
         <Button
-          className="p-button-text p-button-sm btn-orange"
+          className="p-button-text p-button-sm tag-icon-btn btn-orange"
           icon="pi pi-gift"
           onClick={() => onClaimReward?.(d.requestId, d.fingerprint)}
           tooltip={d.requestId ? `Claim reward for request #${d.requestId}` : "No open request found for this suiteHash"}
