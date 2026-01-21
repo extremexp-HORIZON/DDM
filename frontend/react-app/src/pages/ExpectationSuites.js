@@ -103,6 +103,7 @@ const ExpectationSuites = () => {
   const openRequestDialogForRow = (rowData) => {
     // Build suitePayload from rowData shape (adjust as needed)
     const payload = {
+      expectation_suite_id: String(rowData.id),
       name: rowData?.suite_name || "",
       description: rowData?.use_case || "",
       category: rowData?.category || "mobility",
