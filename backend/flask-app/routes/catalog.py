@@ -292,9 +292,10 @@ class FileAdvancedQueryResource(Resource):
         files = File.filter_files(filters)
 
         return jsonify([{
-            'id': file.id,
-            'filename': file.upload_filename,
-            'use_case': file.use_case,
-            'timestamp': file.timestamp,
-            'file_metadata': file.file_metadata
-        } for file in files])
+            "id": f.id,
+            "filename": f.filename,
+            "upload_filename": f.upload_filename,
+            "use_case": f.use_case if isinstance(f.use_case, list) else [],
+            "created": f.created.isoformat() if f.created else None,
+            "file_metadata": f.file_metadata,
+        } for f in files])
