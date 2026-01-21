@@ -44,6 +44,7 @@ function App() {
                     <Route path="/my-catalog" element={<MyCatalog/>}/>
                     <Route path="/projects" element={<ExploreProjectsTable />} />
                     <Route path="/upload" element={<FileUploader/>}/>
+                    <Route path="/catalog-advanced" element={<FileQueryBuilder/>}/>
                     <Route path="/upload-async" element={<ChunkUploader/>}/>
                     <Route path="/upload-links" element={<LinkUploader/>}/>
                     <Route path="/set-policies" element={<SetPolicies/>}/>
