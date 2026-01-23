@@ -96,7 +96,7 @@ class SingleFileUploadWithMetadataResource(Resource):
                 },
                 "nft_metadata": {},
                 "use_case": use_case,
-                "file_type": file.file_extension
+                "file_type": file_extension
             }
             new_file = save_file_record(file_data)
             file_id = new_file.id
