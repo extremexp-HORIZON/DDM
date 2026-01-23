@@ -7,7 +7,7 @@ from utils.user_file_logger import log_action_with_context
 from auth.auth import get_current_username 
 import zipfile
 import datetime
-import os
+import io
 import logging
 
 logger = logging.getLogger(__name__)  # Get a named logger
@@ -124,46 +124,84 @@ class MultipleFileMetadataResource(Resource):
         metadata_list = {file.id: file.file_metadata for file in files}
         return {'metadata': metadata_list}, 200
     
-
 @file_metadata_ns.route('/reports')
 @file_metadata_ns.expect(file_metadata_ns.model('FileIdsRequest', {
     'file_ids': fields.List(fields.String, required=True, description='List of file IDs to download reports')
 }))
-@file_metadata_ns.doc(description="List of file IDs to download reports", security='oauth2')
+@file_metadata_ns.doc(description="Download HTML profile reports for multiple files as a ZIP", security='oauth2')
 class FileReportsDownloadResource(Resource):
-    
     def post(self):
-        """Retrieve HTML reports for multiple files from Zenoh."""
-        data = request.json
-        file_ids = data.get('file_ids', [])
-        files = get_file_records_by_ids(file_ids)
-        if not files:
-            return {'message': 'No files found for the given IDs'}, 404
+        data = request.get_json(silent=True) or {}
+        file_ids = data.get("file_ids") or []
 
-        zip_filename = f"reports_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.zip"
-        zip_temp_path = os.path.join("/tmp", zip_filename)  # ✅ Use /tmp for safe storage
+        if not isinstance(file_ids, list) or not all(isinstance(x, str) for x in file_ids):
+            return {"message": "file_ids must be a list of strings"}, 400
+
+        file_ids = [x.strip() for x in file_ids if x and x.strip()]
+        if not file_ids:
+            return {"message": "file_ids is required"}, 400
+
+        files, err = get_file_records_by_ids(file_ids)
+        if err:
+            return {"message": err}, 404  # or 400 depending on your API choice
+
+        # files is now the actual list of ORM objects
+        for f in files:
+            zenoh_report_path = f"projects/{f.project_id}/files/{f.id}/{f.id}_profile_report.html"
+
+
+
+        if files and any(isinstance(x, list) for x in files):
+            flat = []
+            for x in files:
+                if isinstance(x, list):
+                    flat.extend(x)
+                else:
+                    flat.append(x)
+            files = flat
+
+        if not files:
+            return {"message": "No files found for the given IDs"}, 404
+
+        zip_name = f"reports_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.zip"
+        buf = io.BytesIO()
 
         try:
-            with zipfile.ZipFile(zip_temp_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for file in files:
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zipf:
+                missing = []
+                for f in files:
+                    zenoh_report_path = f"projects/{f.project_id}/files/{f.id}/{f.id}_profile_report.html"
+                    content = ZenohFileHandler.get_file(zenoh_report_path)
+                    if content is None:
+                        missing.append(f"{f.id} -> {zenoh_report_path}")
+                        continue
+                    if isinstance(content, str):
+                        content_bytes = content.encode("utf-8")
+                    else:
+                        content_bytes = content  # bytes
 
-                    zenoh_report_path = f"projects/{file.project_id}/files/{file.id}/{file.id}_profile_report.html"
-                    file_content = ZenohFileHandler.get_file(zenoh_report_path)
+                    if not isinstance(content_bytes, (bytes, bytearray)):
+                        missing.append(f"{f.id} -> {zenoh_report_path} (unexpected type: {type(content)})")
+                        continue
 
-                    if file_content is None:
-                        logger.warning(f"⚠️ Report not found in Zenoh: {zenoh_report_path}")
-                        continue  # Skip missing reports
+                    base = getattr(f, "upload_filename", None) or f.id
+                    base = str(base).replace("/", "_").replace("\\", "_")
+                    zipf.writestr(f"{base}_profile_report.html", content_bytes)
 
-                    # ✅ Store report in ZIP
-                    with zipf.open(f"{file.upload_filename}_profile_report.html", 'w') as report_file:
-                        report_file.write(file_content.read())
+                if missing:
+                    zipf.writestr("missing_reports.txt", "\n".join(missing) + "\n")
 
-            return send_file(zip_temp_path, as_attachment=True, download_name=zip_filename, mimetype="application/zip")
+            buf.seek(0)
+            return send_file(
+                buf,
+                as_attachment=True,
+                download_name=zip_name,
+                mimetype="application/zip",
+            )
 
         except Exception as e:
-            logger.error(f"❌ Failed to create ZIP file for reports: {str(e)}")
-            return {'message': 'Failed to download reports.'}, 500
-
+            logger.exception("❌ Failed to create ZIP file for reports")
+            return {"message": f"Failed to download reports: {str(e)}"}, 500
 
 @file_metadata_ns.route('/report/<string:file_id>')
 @file_metadata_ns.doc(
