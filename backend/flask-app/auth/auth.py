@@ -41,7 +41,7 @@ userAuthHandler = UserAuthHandler()
 
 def ensure_user_exists(user_info):
     sub = user_info["sub"]
-    user = User.query.get(sub)
+    user = db.session.get(User, sub)
 
     if not user:
         user = User(
