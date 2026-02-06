@@ -26,7 +26,7 @@ const SuiteRegisterDialog = ({
 
   initialCategoryKey = "mobility",
   initialFileFormatKey = "csv",
-  initialBountyEth = 0.05,
+  initialBountyEth = 0.005,
   initialDeadline = new Date(Date.now() + 7 * 24 * 3600 * 1000),
   initialTotalExpected = 10,
 
