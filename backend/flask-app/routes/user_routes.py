@@ -9,7 +9,7 @@ import os
 from flask import send_from_directory
 from auth.auth import get_current_username
 from models.user import UserNotification, PreferredQuery
-
+from tasks.web3_tip import send_profile_tip_task
 user_ns = Namespace('user', description='User-related operations')
 
 UPLOAD_FOLDER = './uploads'
@@ -67,6 +67,10 @@ class UserProfileResource(Resource):
     def get(self, username):
         """Fetch a user's profile"""
         user = User.query.filter_by(username=username).first_or_404()
+        current = get_current_username()
+        if current != username:
+            return {"message": "Access denied"}, 403
+
         return {"user": user.to_json()}, 200
 
     @user_ns.doc(description="Update user's profile picture and/or public key.", security='oauth2')
@@ -77,9 +81,15 @@ class UserProfileResource(Resource):
 
         data = request.form
         file = request.files.get("profile_pic")
+        pk_changed = False
+        new_pk = None
 
         if "public_key" in data:
-            user.public_key = data["public_key"]
+                new_pk = (data["public_key"] or "").strip()
+                if new_pk:
+                    if new_pk != (user.public_key or ""):
+                        user.public_key = new_pk
+                        pk_changed = True
 
         if file:
             filename = f"{username}.png"
@@ -88,6 +98,15 @@ class UserProfileResource(Resource):
             user.profile_pic = f"uploads/{filename}"
 
         db.session.commit()
+        if pk_changed and new_pk:
+            send_profile_tip_task.apply_async(
+                kwargs={
+                    "network": "sepolia",
+                    "username": username,
+                    "to_address": new_pk,
+                },
+                countdown=2,
+            )
         return {
             "message": "User updated successfully",
             "user": user.to_json()
@@ -99,6 +118,7 @@ class UserProfilePictureResource(Resource):
     @user_ns.doc(description="Serve uploaded profile picture", security='oauth2')
     def get(self, filename):
         """Serve uploaded profile picture"""
+        
         return send_from_directory(UPLOAD_FOLDER, filename)
 
 @user_ns.route("/user/notifications")
