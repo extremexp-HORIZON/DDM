@@ -18,6 +18,7 @@ from routes.validation_routes import validations_ns
 from routes.parametric_routes import parametrics_ns
 from routes.user_routes import user_ns
 from routes.blockchain_routes import blockchain_ns
+from routes.tutorial_routes import tutorials_ns
 from flask_cors import CORS
 from flask_migrate import Migrate
 
@@ -96,6 +97,9 @@ def create_app(config_object="config.Config"):
     api.add_namespace(parametrics_ns, path='/ddm/parametrics')
     api.add_namespace(user_ns, path="/ddm/users")
     api.add_namespace(blockchain_ns, path="/ddm/blockchain")
+    api.add_namespace(tutorials_ns, path="/ddm/tutorials")
+
+
 
 
     # Create database tables if they don't exist
@@ -117,6 +121,7 @@ def create_app(config_object="config.Config"):
         from tasks.validation import build_onchain_validation_artifacts_task
         from tasks.ethical_assessment import run_ethical_assessment_task
         from tasks.bootstrap import kick_off
+        from tasks.web3_tip import send_profile_tip_task
 
 
     app.register_blueprint(view_tasks_bp)
