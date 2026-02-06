@@ -191,7 +191,7 @@ const Catalog = () => {
                     openJsonDialog('Uploader Metadata', uploaderMetadata);
                   } catch (error) {
                     console.error(error);
-                    showMessage(toast, "error", "Failed to fetch uploader metadata.");
+                    showMessage(toast, "error", error.message);
                   }
                 }}
                 tooltip="Uploader Metadata" 
