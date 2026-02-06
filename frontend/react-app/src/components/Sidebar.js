@@ -138,6 +138,8 @@ const CustomSidebar = ({isOpen, setIsOpen}) => {
     
     { label: "Policies", icon: "pi pi-lock", to: "/set-policies" },
     { label: "Settings", icon: "pi pi-cog", to: "/parametrics" },
+    { label: "Tutorials", icon: "pi pi-graduation-cap", to: "/tutorials" },
+
 
   ];
   const getInitialExpanded = (items) => {
