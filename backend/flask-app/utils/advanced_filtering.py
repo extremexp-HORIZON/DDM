@@ -214,7 +214,7 @@ def _parse_rule_group(group):
 def filter_files(query_payload):
     try:
         where_clause = _parse_rule_group(query_payload or {})
-        query = File.query
+        query = File.query.filter(File.recdeleted.is_(False))
         if where_clause is not None:
             query = query.filter(where_clause)
         return query
