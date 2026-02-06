@@ -6,6 +6,7 @@ from utils.file_handler import apply_catalog_filters, apply_catalog_sorting
 from parsers.file_catalog_filter_parser import file_catalog_filter_parser
 from parsers.file_catalog_options_parser import file_options_parser
 from parsers.file_catalog_tree import tree_query_parser
+from utils.advanced_filtering import filter_files as advanced_filter_files
 from auth.auth import get_current_username
 from sqlalchemy import func, String
 from sqlalchemy import func
@@ -269,27 +270,16 @@ class FileTreeResource(Resource):
         return {"nodes": nodes, "totalRecords": file_query.count() + len(seen)}
 
 
-# Advanced File Query Endpoint (in the catalog namespace)
-@catalog_ns.route('/advanced')
+@catalog_ns.route("/advanced")
 class FileAdvancedQueryResource(Resource):
-    @catalog_ns.doc(
-        description="Supports complex JSON expressions for advanced file filtering.",
-        security='oauth2',
-        responses={
-            200: 'Files filtered successfully',
-            400: 'Invalid JSON format',
-            500: 'Internal server error'
-        }
-    )
     def post(self):
-        """Supports complex JSON expressions for file filtering."""
         try:
-            filters = request.json
+            filters = request.json or {}
         except Exception as e:
-            return {'message': 'Invalid JSON format.', 'error': str(e)}, 400
+            return {"message": "Invalid JSON format.", "error": str(e)}, 400
 
-        # Fetch the files using the filter function
-        files = File.filter_files(filters)
+        query = advanced_filter_files(filters)
+        files = query.all()
 
         return jsonify([{
             "id": f.id,
@@ -298,4 +288,8 @@ class FileAdvancedQueryResource(Resource):
             "use_case": f.use_case if isinstance(f.use_case, list) else [],
             "created": f.created.isoformat() if f.created else None,
             "file_metadata": f.file_metadata,
+            "file_type": f.file_type,
+            "file_size":f.file_type,
+            "user_id":f.user_id
         } for f in files])
+
