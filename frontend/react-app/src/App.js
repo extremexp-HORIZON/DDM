@@ -22,6 +22,7 @@ import ValidationViewerPage from "./pages/ValidationViewerPage";
 import ReportViewerPage from "./pages/ReportViewerPage";
 import BlockchainContracts from "./pages/BlockchainContracts";
 import Parametrics from "./pages/Parametrics";
+import Tutorials from "./pages/Tutorials"
 import "./styles/layout.css";
 import "./styles/global.css";
 import "primeicons/primeicons.css";
@@ -56,6 +57,7 @@ function App() {
                     <Route path="/parametrics" element={<Parametrics/>}/>
                     <Route path="/blockchain/contracts" element={<BlockchainContracts />} />
                     <Route path="/suite-requests-dashboard" element={<SuiteRequestsDashboard/>}/>
+                    <Route path="/tutorials" element={<Tutorials/>}/>
                   </Routes>
                 </Layout>
               </PrimeReactProvider>
