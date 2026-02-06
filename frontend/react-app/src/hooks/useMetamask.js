@@ -9,7 +9,7 @@ export const useMetamask = () => {
   const [balance, setBalance] = useState(null);
   const [error, setError] = useState(null);
 
-  // ✅ add web3 to state
+
   const [web3, setWeb3] = useState(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export const useMetamask = () => {
     }
   };
 
-  // ✅ expose ensureSepolia since your dialog expects it
+
   const ensureSepolia = async () => {
     const chainId = await window.ethereum.request({ method: "eth_chainId" });
     if (chainId?.toLowerCase() !== SEPOLIA_CHAIN_ID) {
@@ -64,7 +64,7 @@ export const useMetamask = () => {
       const address = accounts[0];
       setWallet(address);
 
-      // ✅ make sure web3 exists after connect too
+
       if (!web3) setWeb3(new Web3(window.ethereum));
 
       await fetchBalance(address);
