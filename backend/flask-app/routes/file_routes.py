@@ -210,12 +210,13 @@ class FileResource(Resource):
 
         if not file:
             return {"message": "File not found"}, 404
+        if username != file.user_id:
+            return {"message": "You are not authorized to update this file"}, 403
 
         if file.nft_metadata:
             return {"message": "File is already registered as NFT, cannot be updated"}, 400
         
-        if username != file.user_id:
-            return {"message": "You are not authorized to update this file"}, 403
+
 
         # Validate use_case
         if "use_case" in data:
@@ -273,7 +274,8 @@ class FileDownloadResource(Resource):
             return {'message': 'File not found.'}, 404
         file_path = file.path
         file_content = ZenohFileHandler.get_file(file_path)
-
+        if not username== file.user_id:
+            return {'message': 'You are not authorized to download this file.'}, 403
         if file_content is None:
             return {'message': 'File not found in Zenoh Storage.'}, 404  
 
@@ -295,8 +297,6 @@ class FileDownloadResource(Resource):
                 "source": "zenoh"
             }
         )
-
-
         return send_file(
             file_content,
             mimetype=mime_type,
@@ -327,10 +327,9 @@ class FileDeleteResource(Resource):
             return {'message': 'File not found.'}, 404
         if file.nft_metadata:
             return {'message': 'Cannot delete file. NFT restriction'}, 400
-
-        success, error = delete_file_record(file)
         if not username== file.user_id:
             return {'message': 'You are not authorized to delete this file.'}, 403
+        success, error = delete_file_record(file)
             
         log_action_with_context(
             username=username,
@@ -340,7 +339,7 @@ class FileDeleteResource(Resource):
                 "reason": "user requested",
                 "datetime_requested": datetime.datetime.now().isoformat()
             }
-)
+        )
 
 
         if success:
