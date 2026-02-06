@@ -83,11 +83,73 @@ const ValidationResultsViewer = ({ result, isDarkMode }) => {
     };
     
     
+    const isPrimitive = (v) =>
+        v == null || typeof v === "string" || typeof v === "number" || typeof v === "boolean";
+
+    const safeStr = (v) => {
+        if (v === undefined) return "";
+        if (v === null) return "null";
+        if (isPrimitive(v)) return String(v);
+        try {
+            return JSON.stringify(v);
+        } catch {
+            return String(v);
+        }
+    };
+
+    const truncate = (s, n = 120) => (s.length > n ? s.slice(0, n) + "…" : s);
 
     const renderResult = (rowData) => {
-        const observed = rowData.result?.observed_value;
-        return observed !== undefined ? `Observed: ${observed}` : "—";
+        const r = rowData?.result || {};
+        const type = rowData?.expectation_config?.type || "";
+
+    // 1) Column-set / validity style expectations (usually the most useful for FAIL)
+        if (r.unexpected_count !== undefined || r.unexpected_percent !== undefined) {
+            const parts = [];
+
+            if (r.missing_count !== undefined) parts.push(`missing: ${r.missing_count} (${(r.missing_percent ?? 0).toFixed?.(2) ?? r.missing_percent}%)`);
+            if (r.unexpected_count !== undefined) parts.push(`unexpected: ${r.unexpected_count} (${(r.unexpected_percent ?? 0).toFixed?.(2) ?? r.unexpected_percent}%)`);
+
+            // Show a small sample of unexpected values (nulls too)
+            const sample = Array.isArray(r.partial_unexpected_list) ? r.partial_unexpected_list.slice(0, 8) : [];
+            if (sample.length) parts.push(`sample: ${truncate(safeStr(sample), 80)}`);
+
+            return parts.length ? parts.join(" • ") : "—";
+        }
+
+        // 2) Schema mismatch expectations
+        if (r.details?.mismatched && Array.isArray(r.details.mismatched)) {
+            const sample = r.details.mismatched.slice(0, 2).map((m) => `${m.Found}≠${m.Expected ?? "∅"} @${m["Expected Column Position"]}`);
+            return `mismatched: ${sample.join(" • ")}${r.details.mismatched.length > 2 ? " • …" : ""}`;
+        }
+
+        // 3) Observed value (number/string/array/object)
+        if (r.observed_value !== undefined) {
+            // arrays (like observed columns list)
+            if (Array.isArray(r.observed_value)) {
+            return `Observed: ${truncate(r.observed_value.join(", "), 120)}`;
+            }
+            // objects
+            if (typeof r.observed_value === "object" && r.observed_value !== null) {
+            return `Observed: ${truncate(safeStr(r.observed_value), 140)}`;
+            }
+            // primitive
+            return `Observed: ${safeStr(r.observed_value)}`;
+        }
+
+        // 4) If GE returned a generic "details" object, show a short preview
+        if (r.details && typeof r.details === "object") {
+            return truncate(`Details: ${safeStr(r.details)}`, 160);
+        }
+
+        // 5) Fallback: show something if result has keys
+        const keys = Object.keys(r);
+        if (keys.length) return truncate(safeStr(r), 160);
+
+        return "—";
     };
+
+        
 
     return (
         <div className="p-4">
