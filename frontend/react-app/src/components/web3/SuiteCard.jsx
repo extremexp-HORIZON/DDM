@@ -275,7 +275,7 @@ export default function SuiteCard({
 
         {onRegisterDataset && (
           <Button
-            icon="pi pi-database"
+            icon="pi pi-play"
             className="p-button-rounded p-button-text p-button-sm icon-btn btn-orange"
             disabled={registerDisabled}
             tooltip={
