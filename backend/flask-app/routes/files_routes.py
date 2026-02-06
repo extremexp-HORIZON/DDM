@@ -169,7 +169,6 @@ class MultipleFileUploadResource(Resource):
         return {'message': f'{len(files)} file(s) uploaded successfully!', 'files': uploaded_files}, 200
 
 
-
 @files_ns.route('/download')
 class MultipleFileDownloadResource(Resource):
     @files_ns.expect(files_ns.model('DownloadFileIds', {
@@ -181,6 +180,7 @@ class MultipleFileDownloadResource(Resource):
         responses={
             200: 'Files downloaded successfully as a ZIP archive',
             400: 'No file IDs provided.',
+            403: 'Not authorized to download one or more files.',
             404: 'One or more files not found in Zenoh.',
             500: 'Failed to create ZIP file.'
         }
@@ -188,49 +188,95 @@ class MultipleFileDownloadResource(Resource):
     def post(self):
         """Download multiple files as a ZIP archive (Fetched from Zenoh)."""
         username = get_current_username()
-        data = request.json
-        file_ids = data.get('file_ids')
 
-        file_ids = data.get('file_ids')
-        files, error = get_file_records_by_ids(file_ids)
+        data = request.get_json(silent=True) or {}
+        file_ids = data.get("file_ids") or []
 
-        if error:
-            return {'message': error}, 404
+        if not isinstance(file_ids, list) or not all(isinstance(x, str) for x in file_ids):
+            return {"message": "file_ids must be a list of strings"}, 400
 
-        # ✅ Generate a temporary ZIP file path
+        file_ids = [x.strip() for x in file_ids if x and x.strip()]
+        if not file_ids:
+            return {"message": "file_ids is required"}, 400
+
+        files, err = get_file_records_by_ids(file_ids)
+        if err:
+            return {"message": err}, 404
+
+        if files and any(isinstance(x, list) for x in files):
+            flat = []
+            for x in files:
+                flat.extend(x) if isinstance(x, list) else flat.append(x)
+            files = flat
+
+        if not files:
+            return {"message": "No files found for the given IDs"}, 404
+        for f in files:
+            if not f:
+                return {"message": "File not found"}, 404
+            if username != f.user_id:
+                return {"message": "You are not authorized to download one or more files."}, 403
+
         zip_filename = f"files_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip"
-        zip_temp_path = os.path.join("/tmp", zip_filename) 
+        zip_temp_path = os.path.join("/tmp", zip_filename)
+
+        missing = []
+        written = []
 
         try:
-            with zipfile.ZipFile(zip_temp_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                for file in files:
-                    file_path = file.path  # Zenoh key
-                    file_content = ZenohFileHandler.get_file(file_path)  # 🔥 Fetch from Zenoh
-                    
-                    if file_content is None:
+            with zipfile.ZipFile(zip_temp_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                for f in files:
+                    file_path = f.path  # Zenoh key
+                    content = ZenohFileHandler.get_file(file_path)
+
+                    if content is None:
                         logger.error(f"❌ File not found in Zenoh: {file_path}")
-                        continue  # Skip missing files instead of failing
+                        missing.append(f"{f.id} -> {file_path}")
+                        continue
 
-                    # ✅ Convert to in-memory file and add to ZIP
-                    with zipf.open(os.path.basename(file_path), 'w') as f:
-                        f.write(file_content.read())  # Write binary data to ZIP
-                log_action_with_context(
-                    username=username,
-                    action_type="download",
-                    file_id=file.id,
-                    metadata={
-                        "file_ids": file_ids,
-                        "zip_filename": zip_filename,
-                        "download_method": "bulk"
-                    }
-                )
+                    # Handle bytes / str / file-like
+                    if isinstance(content, str):
+                        content_bytes = content.encode("utf-8")
+                    elif isinstance(content, (bytes, bytearray)):
+                        content_bytes = content
+                    else:
+                        try:
+                            content_bytes = content.read()
+                        except Exception:
+                            missing.append(f"{f.id} -> {file_path} (unexpected type: {type(content)})")
+                            continue
 
-            # ✅ Return the ZIP file for download
-            return send_file(zip_temp_path, as_attachment=True, download_name=zip_filename, mimetype="application/zip")
+                    arcname = (getattr(f, "upload_filename", None) or os.path.basename(file_path) or f.id)
+                    arcname = str(arcname).replace("/", "_").replace("\\", "_")
+                    zipf.writestr(arcname, content_bytes)
+                    written.append(f.id)
+
+                if missing:
+                    zipf.writestr("missing_files.txt", "\n".join(missing) + "\n")
+
+            log_action_with_context(
+                username=username,
+                action_type="download_bulk",
+                file_id=None,
+                metadata={
+                    "requested_file_ids": file_ids[:200],
+                    "written_file_ids": written[:200],
+                    "missing_count": len(missing),
+                    "zip_filename": zip_filename,
+                },
+            )
+
+            return send_file(
+                zip_temp_path,
+                as_attachment=True,
+                download_name=zip_filename,
+                mimetype="application/zip",
+            )
 
         except Exception as e:
-            logger.error(f"❌ Failed to create ZIP file: {str(e)}")
-            return {'message': 'Failed to download files.'}, 500
+            logger.exception(f"❌ Failed to create ZIP file: {str(e)}")
+            return {"message": "Failed to download files."}, 500
+
         
 
 @files_ns.route('/download/project')
