@@ -312,7 +312,10 @@ class ExpectationSuiteDetail(Resource):
     @expectations_ns.marshal_with(expectation_suite_response_model)
     def get(self, suite_id):
         """Get details of an expectation suite"""
+        username=get_current_username()
         suite = ExpectationSuites.query.get_or_404(suite_id)
+        if suite.user_id != username:
+            return {"message": "You are not authorized to view this expectation suite."}, 403
         data = suite.to_json()
 
         # attach on-chain requests (if any)
