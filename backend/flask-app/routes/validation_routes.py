@@ -7,6 +7,7 @@ from dateutil.parser import isoparse
 from sqlalchemy import or_
 from models.expectations import ValidationResults
 from auth.auth import get_current_username
+from utils.file_handler import get_file_records_by_ids, get_file_record
 
 def split_values(value):
     return [v.strip() for v in value.split(',')] if value else []
@@ -54,6 +55,7 @@ class ValidationResultsList(Resource):
     @validations_ns.expect(validation_results_filter_parser)
     def get(self):
         """Get all validation results with filters"""
+        username=get_current_username()
         args = validation_results_filter_parser.parse_args()
 
         dataset_names = args.get('dataset_name')
@@ -86,12 +88,9 @@ class ValidationResultsList(Resource):
         page = args.get('page', 1)
         per_page = args.get('perPage', 10)
 
-        query = ValidationResults.query
-
+        query = ValidationResults.query.filter(ValidationResults.user_id==username)
         if dataset_names:
             query = query.filter(or_(*[ValidationResults.dataset_name.ilike(f"%{v}%") for v in dataset_names]))
-        if user_ids:
-            query = query.filter(or_(*[ValidationResults.user_id.ilike(f"%{v}%") for v in user_ids]))
         if suite_ids:
             query = query.filter(ValidationResults.suite_id.in_(suite_ids))
         if dataset_ids:
@@ -118,7 +117,8 @@ class ValidationResultsList(Resource):
 
         filtered_total = query.count()
         results = query.offset((page - 1) * per_page).limit(per_page).all()
-        total = ValidationResults.query.count()
+        total = ValidationResults.query.filter(ValidationResults.user_id == username).count()
+
 
         return {
             "data": [r.to_json() for r in results],
@@ -136,9 +136,11 @@ class ExpectationResultDetail(Resource):
     @validations_ns.doc(security='oauth2')
     def get(self, result_id):
         """Get a detailed result entry"""
+        username=get_current_username()
         result = ValidationResults.query.get_or_404(result_id)
+        if not result.user_id==username:
+            return{"message": "You are not authorized to view this result."}, 403
         return result.to_json()
-
 
 
 @validations_ns.route('/validate/files-against-suite')
@@ -149,40 +151,62 @@ class ValidateFilesAgainstSuite(Resource):
     @validations_ns.doc(description="Validate multiple files against a single expectation suite.")
     def post(self):
         """Validate multiple files against a single expectation suite."""
-        username = get_current_username()  
+        username = get_current_username()
 
-        data = request.json
+        data = request.get_json(silent=True) or {}
         suite_id = data.get("suite_id")
         file_ids = data.get("file_ids", [])
 
         if not suite_id or not file_ids:
             return {"error": "Both suite_id and file_ids are required."}, 400
 
+        files, err = get_file_records_by_ids(file_ids)  # if your helper returns (files, err)
+        if err:
+            return {"message": err}, 404
+
+        if not files:
+            return {"message": "No files found for the given IDs"}, 404
+
+        allowed = [f for f in files if getattr(f, "user_id", None) == username]
+        denied = [f.id for f in files if getattr(f, "user_id", None) != username]
+
+        if denied:
+            return {
+                "message": "You are not authorized to validate one or more files.",
+                "denied_file_ids": denied
+            }, 403
+
+        allowed_ids = [f.id for f in allowed]
+
         tasks = []
         already_validated = []
 
-        for file_id in file_ids:
-            existing = ValidationResults.query.filter_by(dataset_id=file_id).first()
+        for file_id in allowed_ids:
+            # ✅ IMPORTANT: scope "already validated" to THIS user + THIS suite
+            existing = (
+                ValidationResults.query
+                .filter_by(dataset_id=file_id, suite_id=suite_id, user_id=username)
+                .first()
+            )
+
             if existing:
                 already_validated.append(file_id)
-            else:
-                task = run_expectation_suites_task.delay(file_id, [suite_id], username)
-                tasks.append({
-                    "file_id": file_id,
-                    "task_id": task.id
-                })
+                continue
 
-        if already_validated:
+            task = run_expectation_suites_task.delay(file_id, [suite_id], username)
+            tasks.append({"file_id": file_id, "task_id": task.id})
+
+        if already_validated and not tasks:
             return {
-                "error": "Some files already have validation results.",
+                "message": "All requested files already have validation results for this suite.",
                 "already_validated_file_ids": already_validated
-            }, 409  # Conflict
+            }, 409
 
         return {
             "message": f"Started validation for {len(tasks)} file(s) against suite {suite_id}.",
-            "tasks": tasks
+            "tasks": tasks,
+            "already_validated_file_ids": already_validated
         }, 202
-
 
 
 @validations_ns.route('/validate/file-against-suites')
@@ -192,35 +216,45 @@ class ValidateFileAgainstSuites(Resource):
     @validations_ns.response(202, 'Validation task started')
     @validations_ns.doc(description="Validate a single file against multiple expectation suites.")
     def post(self):
-        """Validate a single file against multiple expectation suites."""
         username = get_current_username()
-        data = request.json
+        data = request.get_json(silent=True) or {}
+
         file_id = data.get("file_id")
         suite_ids = data.get("suite_ids", [])
 
         if not file_id or not suite_ids:
             return {"error": "Both file_id and suite_ids are required."}, 400
 
-        # 🛡️ Check for existing validation results for any of the suite_ids
+        # ✅ Load file + ownership check
+        file = get_file_record(file_id)
+        if not file:
+            return {"message": "File not found"}, 404
+
+        if file.user_id != username:
+            return {"message": "You are not authorized to validate this file."}, 403
+
+        # ✅ Check existing results (recommended: user-scoped)
         existing_results = (
             ValidationResults.query
-            .filter(ValidationResults.dataset_id == file_id,
-                    ValidationResults.suite_id.in_(suite_ids))
+            .filter(
+                ValidationResults.dataset_id == file_id,
+                ValidationResults.suite_id.in_(suite_ids),
+                ValidationResults.user_id == username,   # <-- important
+            )
             .all()
         )
 
         if existing_results:
             existing_suite_ids = [res.suite_id for res in existing_results]
             return {
-                "error": "Validation results already exist for some suites.",
+                "error": "Validation results already exist for some suites (for this user).",
                 "existing_suite_ids": existing_suite_ids
             }, 409
 
-        # ✅ No results yet — proceed with task
+        # ✅ Proceed
         task = run_expectation_suites_task.delay(file_id, suite_ids, username)
 
         return {
             "message": f"Started validation for file {file_id} against {len(suite_ids)} suite(s).",
             "task_id": task.id
         }, 202
-
